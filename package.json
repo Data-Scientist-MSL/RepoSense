@@ -1,0 +1,171 @@
+{
+  "name": "reposense",
+  "displayName": "RepoSense - Intelligent Code Analysis & UAT",
+  "description": "AI-powered frontend-backend gap detection, automated UAT generation, and intelligent remediation for modern codebases",
+  "version": "0.1.0",
+  "publisher": "reposense",
+  "icon": "media/icon.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Testing",
+    "Linters",
+    "Other"
+  ],
+  "keywords": [
+    "analysis",
+    "testing",
+    "UAT",
+    "frontend",
+    "backend",
+    "gap-detection",
+    "AI",
+    "code-quality"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "reposense",
+          "title": "RepoSense",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "reposense": [
+        {
+          "id": "reposense.gapAnalysis",
+          "name": "Gap Analysis"
+        },
+        {
+          "id": "reposense.testCases",
+          "name": "Generated Tests"
+        },
+        {
+          "id": "reposense.remediation",
+          "name": "Remediation Suggestions"
+        },
+        {
+          "id": "reposense.coverage",
+          "name": "Coverage Report"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "reposense.scanRepository",
+        "title": "RepoSense: Scan Repository",
+        "icon": "$(search)"
+      },
+      {
+        "command": "reposense.generateTests",
+        "title": "RepoSense: Generate UAT Tests",
+        "icon": "$(testing-run-icon)"
+      },
+      {
+        "command": "reposense.showReport",
+        "title": "RepoSense: Show Detailed Report",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "reposense.fixGap",
+        "title": "RepoSense: Fix This Gap",
+        "icon": "$(wrench)"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "reposense.scanRepository",
+          "when": "workspaceFolderCount > 0"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "reposense.scanRepository",
+          "when": "view == reposense.gapAnalysis",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "reposense.fixGap",
+          "when": "view == reposense.gapAnalysis && viewItem == gap",
+          "group": "inline"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "RepoSense",
+      "properties": {
+        "reposense.scanOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically scan repository on file save"
+        },
+        "reposense.llmModel": {
+          "type": "string",
+          "enum": [
+            "deepseek-coder:6.7b",
+            "deepseek-coder:33b",
+            "codellama:13b",
+            "qwen2.5-coder:7b"
+          ],
+          "default": "deepseek-coder:6.7b",
+          "description": "Local LLM model for intelligent analysis"
+        },
+        "reposense.excludePatterns": {
+          "type": "array",
+          "default": [
+            "**/node_modules/**",
+            "**/dist/**",
+            "**/build/**"
+          ],
+          "description": "Glob patterns to exclude from analysis"
+        },
+        "reposense.maxConcurrentAnalysis": {
+          "type": "number",
+          "default": 4,
+          "description": "Maximum concurrent file analysis operations"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vscode/test-cli": "^0.0.4",
+    "@vscode/test-electron": "^2.3.8",
+    "eslint": "^8.50.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1",
+    "vscode-languageserver": "^9.0.1",
+    "axios": "^1.6.2"
+  },
+  "optionalDependencies": {
+    "tree-sitter": "^0.20.4",
+    "tree-sitter-javascript": "^0.20.3",
+    "tree-sitter-typescript": "^0.20.5",
+    "tree-sitter-python": "^0.20.4",
+    "better-sqlite3": "^9.2.2"
+  }
+}
