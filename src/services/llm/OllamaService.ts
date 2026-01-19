@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import * as vscode from 'vscode';
 import { handleError, withRetry } from '../../utils/ErrorHandler';
+import { GapItem } from '../../models/types';
 
 export interface OllamaModelInfo {
     name: string;
@@ -361,7 +362,7 @@ Return ONLY a JSON array of endpoints, e.g., ["POST /api/users", "GET /api/produ
     public async analyzeArchitecture(
         code: string,
         filePath: string,
-        gaps: any[]
+        gaps: GapItem[]
     ): Promise<string> {
         const systemPrompt = `You are an expert software architect. Analyze code architecture and identify:
 1. Component types (UI, Service, Controller, Database, etc.)
@@ -377,7 +378,7 @@ ${code}
 \`\`\`
 
 Known issues:
-${gaps.map((g: any) => `- ${g.message}`).join('\n')}
+${gaps.map(g => `- ${g.message}`).join('\n')}
 
 Provide:
 1. Component type
@@ -400,7 +401,7 @@ Format as JSON:
      * Generate architecture improvement recommendations
      */
     public async generateArchitectureRecommendations(
-        gaps: any[],
+        gaps: GapItem[],
         currentArchitecture: string
     ): Promise<string> {
         const systemPrompt = `You are a senior software architect specializing in UI/UX improvements and system design.`;
@@ -410,7 +411,7 @@ Format as JSON:
 ${currentArchitecture}
 
 And these identified issues:
-${gaps.map((g: any) => `- [${g.severity}] ${g.message}`).join('\n')}
+${gaps.map(g => `- [${g.severity}] ${g.message}`).join('\n')}
 
 Provide architectural recommendations to:
 1. Resolve identified defects

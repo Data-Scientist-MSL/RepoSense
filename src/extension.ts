@@ -19,6 +19,7 @@ import { TestGenerator } from './services/llm/TestGenerator';
 import { RemediationEngine } from './services/llm/RemediationEngine';
 import { ReportGenerator } from './services/llm/ReportGenerator';
 import { ArchitectureDiagramGenerator } from './services/llm/ArchitectureDiagramGenerator';
+import { DiagramLevel } from './models/diagram-types';
 import { ErrorHandler } from './utils/ErrorHandler';
 import { PerformanceMonitor } from './utils/PerformanceMonitor';
 import { IncrementalAnalyzer } from './utils/IncrementalAnalyzer';
@@ -949,7 +950,7 @@ ${violations.filter(v => v.severity === 'warning').length > 0 ? '- **Warning**: 
                             progress.report({ increment: 30, message: 'Generating as-is diagram...' });
                             const comparison = await diagramGenerator.generateComparison(
                                 lastAnalysisResult!.gaps,
-                                level.value as any
+                                level.value as DiagramLevel
                             );
 
                             progress.report({ increment: 60, message: 'Generating to-be diagram...' });
@@ -993,7 +994,7 @@ ${comparison.differences.map(d => `- [${d.impact.toUpperCase()}] ${d.type.toUppe
                             progress.report({ increment: 50, message: 'Generating as-is diagram...' });
                             const diagram = await diagramGenerator.generateAsIsDiagram(
                                 lastAnalysisResult!.gaps,
-                                level.value as any
+                                level.value as DiagramLevel
                             );
 
                             content = `# ${diagram.title}
@@ -1025,7 +1026,7 @@ ${diagram.legend.colors.map(c => `- ${c.color}: ${c.meaning}`).join('\n')}
                             progress.report({ increment: 50, message: 'Generating to-be diagram...' });
                             const diagram = await diagramGenerator.generateToBeDiagram(
                                 lastAnalysisResult!.gaps,
-                                level.value as any
+                                level.value as DiagramLevel
                             );
 
                             content = `# ${diagram.title}

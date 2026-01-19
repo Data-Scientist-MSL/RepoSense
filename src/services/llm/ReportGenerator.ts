@@ -1,6 +1,7 @@
 import { OllamaService } from './OllamaService';
 import { GapItem } from '../../models/types';
 import { ArchitectureDiagramGenerator } from './ArchitectureDiagramGenerator';
+import { DiagramLevel } from '../../models/diagram-types';
 
 export interface ExecutiveReport {
     title: string;
@@ -20,6 +21,14 @@ export interface ReportMetrics {
     estimatedFixTime: string;
 }
 
+export interface AnalysisSummary {
+    totalFiles?: number;
+    critical?: number;
+    high?: number;
+    medium?: number;
+    low?: number;
+}
+
 export class ReportGenerator {
     private ollamaService: OllamaService;
     private diagramGenerator: ArchitectureDiagramGenerator;
@@ -31,7 +40,7 @@ export class ReportGenerator {
 
     public async generateExecutiveReport(
         gaps: GapItem[],
-        summary: any
+        summary: AnalysisSummary
     ): Promise<ExecutiveReport> {
         const metrics = this.calculateMetrics(gaps, summary);
         const nlSummary = await this.ollamaService.generateNaturalLanguageReport(gaps, summary);
@@ -48,7 +57,7 @@ export class ReportGenerator {
         };
     }
 
-    private calculateMetrics(gaps: GapItem[], summary: any): ReportMetrics {
+    private calculateMetrics(gaps: GapItem[], summary: AnalysisSummary): ReportMetrics {
         const orphaned = gaps.filter(g => g.type === 'orphaned_component').length;
         const unused = gaps.filter(g => g.type === 'unused_endpoint').length;
         const critical = gaps.filter(g => g.severity === 'CRITICAL').length;
@@ -115,7 +124,7 @@ export class ReportGenerator {
         return findings;
     }
 
-    private async generateRecommendations(gaps: GapItem[], summary: any): Promise<string[]> {
+    private async generateRecommendations(gaps: GapItem[], summary: AnalysisSummary): Promise<string[]> {
         const recommendations: string[] = [];
 
         // Priority-based recommendations
@@ -157,7 +166,7 @@ export class ReportGenerator {
 
     public async generateMarkdownReport(
         gaps: GapItem[],
-        summary: any
+        summary: AnalysisSummary
     ): Promise<string> {
         const report = await this.generateExecutiveReport(gaps, summary);
         
@@ -215,7 +224,7 @@ export class ReportGenerator {
 
     public async generateHTMLReport(
         gaps: GapItem[],
-        summary: any
+        summary: AnalysisSummary
     ): Promise<string> {
         const report = await this.generateExecutiveReport(gaps, summary);
         
@@ -373,8 +382,7 @@ export class ReportGenerator {
      */
     public async generateReportWithDiagrams(
         gaps: GapItem[],
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        summary: any,
+        summary: AnalysisSummary,
         includeL1: boolean = true,
         includeL2: boolean = true,
         includeL3: boolean = false
