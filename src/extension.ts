@@ -18,6 +18,7 @@ import { OllamaService } from './services/llm/OllamaService';
 import { TestGenerator } from './services/llm/TestGenerator';
 import { RemediationEngine } from './services/llm/RemediationEngine';
 import { ReportGenerator } from './services/llm/ReportGenerator';
+import { ArchitectureDiagramGenerator } from './services/llm/ArchitectureDiagramGenerator';
 import { ErrorHandler } from './utils/ErrorHandler';
 import { PerformanceMonitor } from './utils/PerformanceMonitor';
 import { IncrementalAnalyzer } from './utils/IncrementalAnalyzer';
@@ -34,6 +35,7 @@ let ollamaService: OllamaService;
 let testGenerator: TestGenerator;
 let remediationEngine: RemediationEngine;
 let reportGenerator: ReportGenerator;
+let diagramGenerator: ArchitectureDiagramGenerator;
 
 // Epic 5: Error handling
 let errorHandler: ErrorHandler;
@@ -63,6 +65,7 @@ export function activate(context: vscode.ExtensionContext) {
     testGenerator = new TestGenerator(ollamaService);
     remediationEngine = new RemediationEngine(ollamaService);
     reportGenerator = new ReportGenerator(ollamaService);
+    diagramGenerator = new ArchitectureDiagramGenerator(ollamaService);
 
     // Check Ollama availability on startup
     ollamaService.checkHealth().then(isHealthy => {
@@ -813,6 +816,7 @@ export function activate(context: vscode.ExtensionContext) {
                 testGenerator = new TestGenerator(ollamaService);
                 remediationEngine = new RemediationEngine(ollamaService);
                 reportGenerator = new ReportGenerator(ollamaService);
+                diagramGenerator = new ArchitectureDiagramGenerator(ollamaService);
                 
                 vscode.window.showInformationMessage(
                     `Ollama configured: ${selectedModel} at ${endpoint}`
@@ -862,6 +866,226 @@ ${violations.filter(v => v.severity === 'warning').length > 0 ? '- **Warning**: 
         }
     );
 
+    const generateArchitectureDiagramsCommand = vscode.commands.registerCommand(
+        'reposense.generateArchitectureDiagrams',
+        async () => {
+            if (!lastAnalysisResult || !lastAnalysisResult.gaps.length) {
+                vscode.window.showWarningMessage(
+                    'No analysis data available. Please run a scan first.',
+                    'Scan Now'
+                ).then(action => {
+                    if (action === 'Scan Now') {
+                        vscode.commands.executeCommand('reposense.scanRepository');
+                    }
+                });
+                return;
+            }
+
+            const isHealthy = await ollamaService.checkHealth();
+            if (!isHealthy) {
+                vscode.window.showErrorMessage(
+                    'Ollama is required for architecture diagram generation. Please start Ollama.',
+                    'Learn More'
+                ).then(action => {
+                    if (action === 'Learn More') {
+                        vscode.env.openExternal(vscode.Uri.parse('https://ollama.ai'));
+                    }
+                });
+                return;
+            }
+
+            // Ask user for diagram level
+            const level = await vscode.window.showQuickPick(
+                [
+                    { label: 'L1 - High-level Overview', value: 'L1', description: 'System overview and major components' },
+                    { label: 'L2 - Component Details', value: 'L2', description: 'Component interactions and data flows' },
+                    { label: 'L3 - Technical Implementation', value: 'L3', description: 'Detailed UI/UX patterns and implementation' }
+                ],
+                { placeHolder: 'Select diagram detail level' }
+            );
+
+            if (!level) return;
+
+            const diagramType = await vscode.window.showQuickPick(
+                [
+                    { label: 'As-Is (Current State)', value: 'as-is', description: 'Shows current architecture with defects' },
+                    { label: 'To-Be (Proposed State)', value: 'to-be', description: 'Shows improved architecture after remediation' },
+                    { label: 'Comparison (Side-by-side)', value: 'comparison', description: 'Shows both as-is and to-be with differences' }
+                ],
+                { placeHolder: 'Select diagram type' }
+            );
+
+            if (!diagramType) return;
+
+            await vscode.window.withProgress(
+                {
+                    location: vscode.ProgressLocation.Notification,
+                    title: 'Generating architecture diagrams...',
+                    cancellable: false
+                },
+                async (progress) => {
+                    try {
+                        progress.report({ increment: 0, message: 'Analyzing architecture...' });
+
+                        let content: string;
+                        let fileName: string;
+                        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
+
+                        if (diagramType.value === 'comparison') {
+                            progress.report({ increment: 30, message: 'Generating as-is diagram...' });
+                            const comparison = await diagramGenerator.generateComparison(
+                                lastAnalysisResult!.gaps,
+                                level.value as any
+                            );
+
+                            progress.report({ increment: 60, message: 'Generating to-be diagram...' });
+                            
+                            // Create comparison report with both diagrams
+                            content = `# Architecture Comparison - ${level.label}
+
+${comparison.summary}
+
+## As-Is Architecture (Current State)
+
+${comparison.asIsDiagram.description}
+
+### Annotations
+${comparison.asIsDiagram.annotations.map(a => `- ${a}`).join('\n')}
+
+\`\`\`mermaid
+${diagramGenerator.toMermaid(comparison.asIsDiagram)}
+\`\`\`
+
+## To-Be Architecture (Proposed State)
+
+${comparison.toBeDiagram.description}
+
+### Annotations
+${comparison.toBeDiagram.annotations.map(a => `- ${a}`).join('\n')}
+
+\`\`\`mermaid
+${diagramGenerator.toMermaid(comparison.toBeDiagram)}
+\`\`\`
+
+## Key Differences
+
+${comparison.differences.map(d => `- [${d.impact.toUpperCase()}] ${d.type.toUpperCase()}: ${d.description}`).join('\n')}
+
+---
+*Generated on ${new Date().toLocaleString()}*
+`;
+                            fileName = `architecture-comparison-${level.value}-${timestamp}.md`;
+                        } else if (diagramType.value === 'as-is') {
+                            progress.report({ increment: 50, message: 'Generating as-is diagram...' });
+                            const diagram = await diagramGenerator.generateAsIsDiagram(
+                                lastAnalysisResult!.gaps,
+                                level.value as any
+                            );
+
+                            content = `# ${diagram.title}
+
+${diagram.description}
+
+## Annotations
+${diagram.annotations.map(a => `- ${a}`).join('\n')}
+
+## Architecture Diagram
+
+\`\`\`mermaid
+${diagramGenerator.toMermaid(diagram)}
+\`\`\`
+
+## Legend
+
+### Symbols
+${diagram.legend.symbols.map(s => `- ${s.icon}: ${s.description}`).join('\n')}
+
+### Colors
+${diagram.legend.colors.map(c => `- ${c.color}: ${c.meaning}`).join('\n')}
+
+---
+*Generated on ${new Date().toLocaleString()}*
+`;
+                            fileName = `architecture-as-is-${level.value}-${timestamp}.md`;
+                        } else {
+                            progress.report({ increment: 50, message: 'Generating to-be diagram...' });
+                            const diagram = await diagramGenerator.generateToBeDiagram(
+                                lastAnalysisResult!.gaps,
+                                level.value as any
+                            );
+
+                            content = `# ${diagram.title}
+
+${diagram.description}
+
+## Annotations
+${diagram.annotations.map(a => `- ${a}`).join('\n')}
+
+## Architecture Diagram
+
+\`\`\`mermaid
+${diagramGenerator.toMermaid(diagram)}
+\`\`\`
+
+## Legend
+
+### Symbols
+${diagram.legend.symbols.map(s => `- ${s.icon}: ${s.description}`).join('\n')}
+
+### Colors
+${diagram.legend.colors.map(c => `- ${c.color}: ${c.meaning}`).join('\n')}
+
+---
+*Generated on ${new Date().toLocaleString()}*
+`;
+                            fileName = `architecture-to-be-${level.value}-${timestamp}.md`;
+                        }
+
+                        progress.report({ increment: 80, message: 'Saving diagram...' });
+
+                        // Save diagram to workspace
+                        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+                        if (workspaceFolder) {
+                            const diagramsPath = path.join(
+                                workspaceFolder.uri.fsPath,
+                                'diagrams',
+                                fileName
+                            );
+
+                            await vscode.workspace.fs.createDirectory(
+                                vscode.Uri.file(path.join(workspaceFolder.uri.fsPath, 'diagrams'))
+                            );
+
+                            await vscode.workspace.fs.writeFile(
+                                vscode.Uri.file(diagramsPath),
+                                Buffer.from(content)
+                            );
+
+                            progress.report({ increment: 100, message: 'Complete!' });
+
+                            const action = await vscode.window.showInformationMessage(
+                                `Architecture diagram generated successfully!`,
+                                'View Diagram',
+                                'Open Folder'
+                            );
+
+                            if (action === 'View Diagram') {
+                                vscode.window.showTextDocument(vscode.Uri.file(diagramsPath));
+                            } else if (action === 'Open Folder') {
+                                vscode.commands.executeCommand(
+                                    'revealFileInOS',
+                                    vscode.Uri.file(diagramsPath)
+                                );
+                            }
+                        }
+                    } catch (error) {
+                        vscode.window.showErrorMessage(`Diagram generation failed: ${error}`);
+                    }
+                }
+            );
+        }
+    );
+
     context.subscriptions.push(
         scanCommand,
         generateTestsCommand,
@@ -884,7 +1108,8 @@ ${violations.filter(v => v.severity === 'warning').length > 0 ? '- **Warning**: 
         analyzeCodeWithAICommand,
         generateReportCommand,
         configureOllamaCommand,
-        showPerformanceReportCommand
+        showPerformanceReportCommand,
+        generateArchitectureDiagramsCommand
     );
 
     // Complete extension activation
