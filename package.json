@@ -79,6 +79,31 @@
         "command": "reposense.fixGap",
         "title": "RepoSense: Fix This Gap",
         "icon": "$(wrench)"
+      },
+      {
+        "command": "reposense.changeGrouping",
+        "title": "Change Grouping",
+        "icon": "$(group-by-ref-type)"
+      },
+      {
+        "command": "reposense.openInEditor",
+        "title": "Open in Editor",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "reposense.applyAutoFix",
+        "title": "Apply Auto-Fix",
+        "icon": "$(lightbulb-autofix)"
+      },
+      {
+        "command": "reposense.runTest",
+        "title": "Run This Test",
+        "icon": "$(play)"
+      },
+      {
+        "command": "reposense.copyGapDetails",
+        "title": "Copy Gap Details",
+        "icon": "$(copy)"
       }
     ],
     "menus": {
@@ -86,6 +111,26 @@
         {
           "command": "reposense.scanRepository",
           "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "reposense.changeGrouping",
+          "when": "false"
+        },
+        {
+          "command": "reposense.openInEditor",
+          "when": "false"
+        },
+        {
+          "command": "reposense.applyAutoFix",
+          "when": "false"
+        },
+        {
+          "command": "reposense.runTest",
+          "when": "false"
+        },
+        {
+          "command": "reposense.copyGapDetails",
+          "when": "false"
         }
       ],
       "view/title": [
@@ -93,6 +138,11 @@
           "command": "reposense.scanRepository",
           "when": "view == reposense.gapAnalysis",
           "group": "navigation"
+        },
+        {
+          "command": "reposense.changeGrouping",
+          "when": "view == reposense.gapAnalysis",
+          "group": "navigation@2"
         }
       ],
       "view/item/context": [
@@ -100,6 +150,36 @@
           "command": "reposense.fixGap",
           "when": "view == reposense.gapAnalysis && viewItem == gap",
           "group": "inline"
+        },
+        {
+          "command": "reposense.openInEditor",
+          "when": "view == reposense.gapAnalysis && viewItem == gap",
+          "group": "navigation@1"
+        },
+        {
+          "command": "reposense.copyGapDetails",
+          "when": "view == reposense.gapAnalysis && viewItem == gap",
+          "group": "actions@1"
+        },
+        {
+          "command": "reposense.applyAutoFix",
+          "when": "view == reposense.remediation && viewItem == remediation",
+          "group": "inline"
+        },
+        {
+          "command": "reposense.openInEditor",
+          "when": "view == reposense.remediation && viewItem == remediation",
+          "group": "navigation@1"
+        },
+        {
+          "command": "reposense.runTest",
+          "when": "view == reposense.testCases && viewItem == test-case",
+          "group": "inline"
+        },
+        {
+          "command": "reposense.openInEditor",
+          "when": "view == reposense.testCases && viewItem == test-case",
+          "group": "navigation@1"
         }
       ]
     },
