@@ -104,6 +104,21 @@
         "command": "reposense.copyGapDetails",
         "title": "Copy Gap Details",
         "icon": "$(copy)"
+      },
+      {
+        "command": "reposense.analyzeCodeWithAI",
+        "title": "RepoSense: Analyze Code with AI",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "reposense.generateReport",
+        "title": "RepoSense: Generate Executive Report",
+        "icon": "$(file-text)"
+      },
+      {
+        "command": "reposense.configureOllama",
+        "title": "RepoSense: Configure Ollama",
+        "icon": "$(settings-gear)"
       }
     ],
     "menus": {
@@ -201,6 +216,26 @@
           ],
           "default": "deepseek-coder:6.7b",
           "description": "Local LLM model for intelligent analysis"
+        },
+        "reposense.ollamaEndpoint": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "Ollama API endpoint URL"
+        },
+        "reposense.autoApplyRemediations": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically apply AI-generated remediations without preview"
+        },
+        "reposense.testFramework": {
+          "type": "string",
+          "enum": [
+            "playwright",
+            "cypress",
+            "auto"
+          ],
+          "default": "auto",
+          "description": "Preferred E2E testing framework for generated tests"
         },
         "reposense.excludePatterns": {
           "type": "array",
