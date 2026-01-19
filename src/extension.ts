@@ -675,16 +675,21 @@ export function activate(context: vscode.ExtensionContext) {
             }
 
             const format = await vscode.window.showQuickPick(
-                ['Markdown', 'HTML', 'Executive Summary'],
+                [
+                    'Markdown', 
+                    'Markdown with Diagrams',
+                    'HTML', 
+                    'Executive Summary'
+                ],
                 { placeHolder: 'Select report format' }
             );
 
             if (!format) return;
 
             const isHealthy = await ollamaService.checkHealth();
-            if (!isHealthy && format === 'Executive Summary') {
+            if (!isHealthy && (format === 'Executive Summary' || format === 'Markdown with Diagrams')) {
                 vscode.window.showErrorMessage(
-                    'Ollama is required for executive summaries. Please start Ollama.',
+                    'Ollama is required for this report format. Please start Ollama.',
                     'Learn More'
                 ).then(action => {
                     if (action === 'Learn More') {
@@ -709,6 +714,15 @@ export function activate(context: vscode.ExtensionContext) {
                             content = await reportGenerator.generateMarkdownReport(
                                 lastAnalysisResult!.gaps,
                                 lastAnalysisResult!.summary
+                            );
+                            extension = 'md';
+                        } else if (format === 'Markdown with Diagrams') {
+                            content = await reportGenerator.generateReportWithDiagrams(
+                                lastAnalysisResult!.gaps,
+                                lastAnalysisResult!.summary,
+                                true,  // Include L1
+                                true,  // Include L2
+                                false  // Skip L3 for now (can be heavy)
                             );
                             extension = 'md';
                         } else if (format === 'HTML') {

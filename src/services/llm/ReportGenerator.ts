@@ -1,5 +1,6 @@
 import { OllamaService } from './OllamaService';
 import { GapItem } from '../../models/types';
+import { ArchitectureDiagramGenerator } from './ArchitectureDiagramGenerator';
 
 export interface ExecutiveReport {
     title: string;
@@ -21,9 +22,11 @@ export interface ReportMetrics {
 
 export class ReportGenerator {
     private ollamaService: OllamaService;
+    private diagramGenerator: ArchitectureDiagramGenerator;
 
     constructor(ollamaService: OllamaService) {
         this.ollamaService = ollamaService;
+        this.diagramGenerator = new ArchitectureDiagramGenerator(ollamaService);
     }
 
     public async generateExecutiveReport(
@@ -363,5 +366,155 @@ export class ReportGenerator {
         });
 
         return grouped;
+    }
+
+    /**
+     * Generate comprehensive report with architecture diagrams
+     */
+    public async generateReportWithDiagrams(
+        gaps: GapItem[],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        summary: any,
+        includeL1: boolean = true,
+        includeL2: boolean = true,
+        includeL3: boolean = false
+    ): Promise<string> {
+        const report = await this.generateExecutiveReport(gaps, summary);
+        
+        let markdown = `# ${report.title}\n\n`;
+        markdown += `**Generated:** ${new Date(report.generatedAt).toLocaleString()}\n\n`;
+        markdown += `---\n\n`;
+        
+        // Executive Summary
+        markdown += `## Executive Summary\n\n`;
+        markdown += `${report.summary}\n\n`;
+        
+        // Architecture Diagrams Section
+        markdown += `## Architecture Diagrams\n\n`;
+        markdown += `This section shows the current architecture (as-is) and proposed improvements (to-be).\n\n`;
+        
+        // L1 Diagrams
+        if (includeL1 && gaps.length > 0) {
+            markdown += `### Level 1: High-Level Architecture\n\n`;
+            
+            try {
+                const comparison = await this.diagramGenerator.generateComparison(gaps, 'L1');
+                
+                markdown += `#### As-Is (Current State)\n\n`;
+                markdown += `${comparison.asIsDiagram.description}\n\n`;
+                markdown += `\`\`\`mermaid\n`;
+                markdown += this.diagramGenerator.toMermaid(comparison.asIsDiagram);
+                markdown += `\n\`\`\`\n\n`;
+                
+                markdown += `#### To-Be (Proposed State)\n\n`;
+                markdown += `${comparison.toBeDiagram.description}\n\n`;
+                markdown += `\`\`\`mermaid\n`;
+                markdown += this.diagramGenerator.toMermaid(comparison.toBeDiagram);
+                markdown += `\n\`\`\`\n\n`;
+                
+                markdown += `#### Key Changes\n\n`;
+                comparison.differences.forEach(diff => {
+                    markdown += `- **${diff.type.toUpperCase()}** [${diff.impact}]: ${diff.description}\n`;
+                });
+                markdown += `\n`;
+            } catch (error) {
+                markdown += `*Diagram generation failed: ${error}*\n\n`;
+            }
+        }
+        
+        // L2 Diagrams
+        if (includeL2 && gaps.length > 0) {
+            markdown += `### Level 2: Component Architecture\n\n`;
+            
+            try {
+                const comparison = await this.diagramGenerator.generateComparison(gaps, 'L2');
+                
+                markdown += `#### As-Is (Current State)\n\n`;
+                markdown += `\`\`\`mermaid\n`;
+                markdown += this.diagramGenerator.toMermaid(comparison.asIsDiagram);
+                markdown += `\n\`\`\`\n\n`;
+                
+                markdown += `#### To-Be (Proposed State)\n\n`;
+                markdown += `\`\`\`mermaid\n`;
+                markdown += this.diagramGenerator.toMermaid(comparison.toBeDiagram);
+                markdown += `\n\`\`\`\n\n`;
+            } catch (error) {
+                markdown += `*Diagram generation failed: ${error}*\n\n`;
+            }
+        }
+        
+        // L3 Diagrams
+        if (includeL3 && gaps.length > 0) {
+            markdown += `### Level 3: Technical Implementation\n\n`;
+            markdown += `Detailed UI/UX patterns and technical architecture.\n\n`;
+            
+            try {
+                const asIsDiagram = await this.diagramGenerator.generateAsIsDiagram(gaps, 'L3');
+                
+                markdown += `#### Current Implementation Issues\n\n`;
+                markdown += `\`\`\`mermaid\n`;
+                markdown += this.diagramGenerator.toMermaid(asIsDiagram);
+                markdown += `\n\`\`\`\n\n`;
+            } catch (error) {
+                markdown += `*Diagram generation failed: ${error}*\n\n`;
+            }
+        }
+        
+        // Metrics
+        markdown += `## Key Metrics\n\n`;
+        markdown += `| Metric | Value |\n`;
+        markdown += `|--------|-------|\n`;
+        markdown += `| Total Gaps | ${report.metrics.totalGaps} |\n`;
+        markdown += `| Critical Issues | ${report.metrics.criticalIssues} |\n`;
+        markdown += `| Orphaned Components | ${report.metrics.orphanedComponents} |\n`;
+        markdown += `| Unused Endpoints | ${report.metrics.unusedEndpoints} |\n`;
+        markdown += `| Estimated Fix Time | ${report.metrics.estimatedFixTime} |\n\n`;
+        
+        // Key Findings
+        markdown += `## Key Findings\n\n`;
+        report.keyFindings.forEach((finding, i) => {
+            markdown += `${i + 1}. ${finding}\n`;
+        });
+        markdown += `\n`;
+        
+        // UI/UX Defects
+        const uiuxDefects = this.diagramGenerator.identifyUIUXDefects(gaps);
+        if (uiuxDefects.length > 0) {
+            markdown += `## UI/UX Architecture Issues\n\n`;
+            uiuxDefects.forEach((defect, i) => {
+                markdown += `${i + 1}. **${defect.category.replace('_', ' ').toUpperCase()}** [${defect.severity}]\n`;
+                markdown += `   - ${defect.description}\n`;
+                markdown += `   - Affected: ${defect.affectedComponents.join(', ')}\n`;
+                markdown += `   - Recommendation: ${defect.recommendation}\n\n`;
+            });
+        }
+        
+        // Recommendations
+        markdown += `## Recommendations\n\n`;
+        report.recommendations.forEach((rec, i) => {
+            markdown += `${i + 1}. ${rec}\n`;
+        });
+        markdown += `\n`;
+        
+        // Detailed Gap List
+        markdown += `## Detailed Gap Analysis\n\n`;
+        
+        const gapsBySeverity = this.groupBySeverity(gaps);
+        for (const [severity, gapsInSeverity] of Object.entries(gapsBySeverity)) {
+            if ((gapsInSeverity as GapItem[]).length > 0) {
+                markdown += `### ${severity} Priority\n\n`;
+                (gapsInSeverity as GapItem[]).forEach((gap, i) => {
+                    markdown += `${i + 1}. **${gap.type.replace('_', ' ').toUpperCase()}**\n`;
+                    markdown += `   - ${gap.message}\n`;
+                    markdown += `   - Location: \`${gap.file}:${gap.line}\`\n`;
+                    if (gap.suggestedFix) {
+                        markdown += `   - Fix: ${gap.suggestedFix}\n`;
+                    }
+                    markdown += `\n`;
+                });
+            }
+        }
+        
+        return markdown;
     }
 }
