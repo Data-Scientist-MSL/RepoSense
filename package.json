@@ -325,6 +325,7 @@
     "eslint": "^8.50.0",
     "mocha": "^11.7.5",
     "sinon": "^21.0.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5.3.0"
   },
   "dependencies": {
