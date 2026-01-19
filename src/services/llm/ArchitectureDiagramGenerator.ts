@@ -29,22 +29,23 @@ export class ArchitectureDiagramGenerator {
         level: DiagramLevel,
         options?: Partial<DiagramGenerationOptions>
     ): Promise<ArchitectureDiagram> {
-        const defaultOptions: DiagramGenerationOptions = {
+        const diagOptions: DiagramGenerationOptions = {
             level,
             includeDefects: true,
             highlightProblematicAreas: true,
             showDataFlow: true,
-            showUIPatterns: level === 'L3'
+            showUIPatterns: level === 'L3',
+            ...options
         };
-
-        const finalOptions = { ...defaultOptions, ...options };
 
         // Extract architecture from gaps and code analysis
         const nodes = await this.extractNodes(gaps, level);
         const edges = await this.extractEdges(gaps, level);
         
-        // Mark problematic nodes and edges
-        this.markProblematicElements(nodes, edges, gaps);
+        // Mark problematic nodes and edges if configured
+        if (diagOptions.highlightProblematicAreas) {
+            this.markProblematicElements(nodes, edges, gaps);
+        }
 
         // Generate annotations
         const annotations = this.generateAnnotations(gaps, level);
@@ -70,15 +71,14 @@ export class ArchitectureDiagramGenerator {
         level: DiagramLevel,
         options?: Partial<DiagramGenerationOptions>
     ): Promise<ArchitectureDiagram> {
-        const defaultOptions: DiagramGenerationOptions = {
+        const diagOptions: DiagramGenerationOptions = {
             level,
             includeDefects: false,
             highlightProblematicAreas: false,
             showDataFlow: true,
-            showUIPatterns: level === 'L3'
+            showUIPatterns: level === 'L3',
+            ...options
         };
-
-        const finalOptions = { ...defaultOptions, ...options };
 
         // Extract base architecture
         const nodes = await this.extractNodes(gaps, level);

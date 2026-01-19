@@ -11,8 +11,7 @@ describe('ArchitectureDiagramGenerator', () => {
 
     beforeEach(() => {
         ollamaServiceStub = sinon.createStubInstance(OllamaService);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        diagramGenerator = new ArchitectureDiagramGenerator(ollamaServiceStub as any);
+        diagramGenerator = new ArchitectureDiagramGenerator(ollamaServiceStub);
     });
 
     afterEach(() => {
