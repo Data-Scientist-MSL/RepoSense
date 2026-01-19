@@ -12,6 +12,7 @@ import { RemediationProvider } from './providers/RemediationProvider';
 import { RepoSenseCodeLensProvider } from './providers/RepoSenseCodeLensProvider';
 import { RepoSenseCodeActionProvider } from './providers/RepoSenseCodeActionProvider';
 import { ReportPanel } from './providers/ReportPanel';
+import { ChatPanel } from './providers/ChatPanel';
 import { DiagnosticsManager } from './services/DiagnosticsManager';
 import { GapItem } from './models/types';
 import { OllamaService } from './services/llm/OllamaService';
@@ -862,6 +863,35 @@ ${violations.filter(v => v.severity === 'warning').length > 0 ? '- **Warning**: 
         }
     );
 
+    const openAIChatCommand = vscode.commands.registerCommand(
+        'reposense.openAIChat',
+        async () => {
+            const isHealthy = await ollamaService.checkHealth();
+            if (!isHealthy) {
+                const action = await vscode.window.showWarningMessage(
+                    'Ollama is not running. The AI chat requires Ollama to be active.',
+                    'Learn More',
+                    'Continue Anyway'
+                );
+                
+                if (action === 'Learn More') {
+                    vscode.env.openExternal(vscode.Uri.parse('https://ollama.ai'));
+                    return;
+                } else if (action !== 'Continue Anyway') {
+                    return;
+                }
+            }
+
+            // Open chat panel with current analysis context if available
+            await ChatPanel.createOrShow(
+                context.extensionUri,
+                ollamaService,
+                lastAnalysisResult?.gaps,
+                lastAnalysisResult?.summary
+            );
+        }
+    );
+
     context.subscriptions.push(
         scanCommand,
         generateTestsCommand,
@@ -884,7 +914,8 @@ ${violations.filter(v => v.severity === 'warning').length > 0 ? '- **Warning**: 
         analyzeCodeWithAICommand,
         generateReportCommand,
         configureOllamaCommand,
-        showPerformanceReportCommand
+        showPerformanceReportCommand,
+        openAIChatCommand
     );
 
     // Complete extension activation
@@ -897,11 +928,48 @@ ${violations.filter(v => v.severity === 'warning').length > 0 ? '- **Warning**: 
 }
 
 export function deactivate(): Thenable<void> | undefined {
-    console.log('RepoSense extension is now deactivated');
-    if (!languageClient) {
+    console.log('RepoSense extension is deactivating...');
+    
+    try {
+        // Dispose chat panel if open
+        if (ChatPanel.currentPanel) {
+            ChatPanel.currentPanel.dispose();
+        }
+        
+        // Dispose report panel if open
+        if (ReportPanel.currentPanel) {
+            ReportPanel.currentPanel.dispose();
+        }
+        
+        // Clear performance monitor data
+        if (performanceMonitor) {
+            performanceMonitor.clearMetrics();
+        }
+        
+        // Dispose incremental analyzer
+        if (incrementalAnalyzer) {
+            incrementalAnalyzer.dispose();
+        }
+        
+        // Stop language client
+        if (languageClient) {
+            console.log('Stopping language client...');
+            return languageClient.stop().then(
+                () => {
+                    console.log('RepoSense extension deactivated successfully');
+                },
+                (error) => {
+                    console.error('Error stopping language client:', error);
+                }
+            );
+        }
+        
+        console.log('RepoSense extension deactivated (no language client)');
+        return undefined;
+    } catch (error) {
+        console.error('Error during deactivation:', error);
         return undefined;
     }
-    return languageClient.stop();
 }
 
 function startLanguageServer(context: vscode.ExtensionContext): LanguageClient {

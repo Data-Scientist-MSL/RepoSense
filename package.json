@@ -143,6 +143,11 @@
         "command": "reposense.showPerformanceReport",
         "title": "RepoSense: Show Performance Report",
         "icon": "$(dashboard)"
+      },
+      {
+        "command": "reposense.openAIChat",
+        "title": "RepoSense: Open AI Assistant Chat",
+        "icon": "$(comment-discussion)"
       }
     ],
     "menus": {
