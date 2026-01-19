@@ -19,6 +19,9 @@ import { TestGenerator } from './services/llm/TestGenerator';
 import { RemediationEngine } from './services/llm/RemediationEngine';
 import { ReportGenerator } from './services/llm/ReportGenerator';
 import { ErrorHandler } from './utils/ErrorHandler';
+import { PerformanceMonitor } from './utils/PerformanceMonitor';
+import { IncrementalAnalyzer } from './utils/IncrementalAnalyzer';
+import { Debouncer } from './utils/BatchProcessor';
 
 let languageClient: LanguageClient;
 let codeLensProvider: RepoSenseCodeLensProvider;
@@ -35,11 +38,25 @@ let reportGenerator: ReportGenerator;
 // Epic 5: Error handling
 let errorHandler: ErrorHandler;
 
+// Epic 5: Performance optimization
+let performanceMonitor: PerformanceMonitor;
+let incrementalAnalyzer: IncrementalAnalyzer;
+let scanDebouncer: Debouncer;
+
 export function activate(context: vscode.ExtensionContext) {
+    const perfTimer = PerformanceMonitor.getInstance().startTimer('extension.activate', {
+        component: 'extension'
+    });
+
     console.log('RepoSense extension is now active!');
 
     // Epic 5: Initialize error handling
     errorHandler = ErrorHandler.getInstance();
+
+    // Epic 5: Initialize performance optimization
+    performanceMonitor = PerformanceMonitor.getInstance();
+    incrementalAnalyzer = new IncrementalAnalyzer();
+    scanDebouncer = new Debouncer();
 
     // Epic 4: Initialize LLM services
     ollamaService = new OllamaService();
@@ -140,6 +157,10 @@ export function activate(context: vscode.ExtensionContext) {
                 return;
             }
 
+            const scanTimer = performanceMonitor.startTimer('scan.repository', {
+                workspaceRoot: workspaceFolder.uri.fsPath
+            });
+
             statusBarItem.text = '$(sync~spin) RepoSense: Scanning...';
             
             await vscode.window.withProgress(
@@ -161,6 +182,7 @@ export function activate(context: vscode.ExtensionContext) {
                         
                         if (token.isCancellationRequested) {
                             statusBarItem.text = '$(pulse) RepoSense Ready';
+                            performanceMonitor.endTimer(scanTimer);
                             return;
                         }
                         
@@ -186,11 +208,23 @@ export function activate(context: vscode.ExtensionContext) {
                         statusBarItem.text = `$(${totalGaps > 0 ? 'warning' : 'check'}) RepoSense: ${totalGaps} gaps found`;
                         
                         progress.report({ increment: 100, message: 'Complete!' });
+
+                        performanceMonitor.endTimer(scanTimer);
+
+                        // Check performance budgets
+                        const budgetViolations = performanceMonitor.checkBudgets();
+                        if (budgetViolations.length > 0) {
+                            const critical = budgetViolations.filter(v => v.severity === 'critical');
+                            if (critical.length > 0) {
+                                console.warn('Performance budget violations:', critical);
+                            }
+                        }
                         
                         vscode.window.showInformationMessage(
                             `RepoSense scan complete! Found ${totalGaps} gaps (${result.summary.critical} critical, ${result.summary.high} high)`
                         );
                     } catch (error) {
+                        performanceMonitor.endTimer(scanTimer);
                         statusBarItem.text = '$(error) RepoSense: Scan failed';
                         vscode.window.showErrorMessage(`RepoSense scan failed: ${error}`);
                     }
@@ -227,6 +261,10 @@ export function activate(context: vscode.ExtensionContext) {
                 return;
             }
 
+            const testGenTimer = performanceMonitor.startTimer('llm.generateTests', {
+                gapCount: lastAnalysisResult.gaps.length
+            });
+
             await vscode.window.withProgress(
                 {
                     location: vscode.ProgressLocation.Notification,
@@ -262,6 +300,8 @@ export function activate(context: vscode.ExtensionContext) {
                             );
                             
                             progress.report({ increment: 100, message: 'Complete!' });
+
+                            performanceMonitor.endTimer(testGenTimer);
                             
                             const action = await vscode.window.showInformationMessage(
                                 `Generated ${testCases.length} AI-powered tests!`,
@@ -274,6 +314,7 @@ export function activate(context: vscode.ExtensionContext) {
                             }
                         }
                     } catch (error) {
+                        performanceMonitor.endTimer(testGenTimer);
                         vscode.window.showErrorMessage(`Test generation failed: ${error}`);
                     }
                 }
@@ -331,8 +372,14 @@ export function activate(context: vscode.ExtensionContext) {
                 return;
             }
 
+            const fixTimer = performanceMonitor.startTimer('llm.fixGap', {
+                severity: gapToFix.severity,
+                type: gapToFix.type
+            });
+
             const isHealthy = await ollamaService.checkHealth();
             if (!isHealthy) {
+                performanceMonitor.endTimer(fixTimer);
                 vscode.window.showErrorMessage(
                     'Ollama is not running. Please start Ollama to use AI features.',
                     'Learn More'
@@ -370,18 +417,21 @@ export function activate(context: vscode.ExtensionContext) {
                             } else if (action === 'Apply Now') {
                                 const success = await remediationEngine.applyRemediation(remediation);
                                 if (success) {
+                                    performanceMonitor.endTimer(fixTimer);
                                     vscode.window.showInformationMessage('Remediation applied successfully!');
                                     // Re-scan to update gaps
                                     vscode.commands.executeCommand('reposense.scanRepository');
                                 }
                             }
                         } else {
+                            performanceMonitor.endTimer(fixTimer);
                             vscode.window.showInformationMessage(
                                 `Manual fix required:\n\n${remediation.description}`,
                                 'View Details'
                             );
                         }
                     } catch (error) {
+                        performanceMonitor.endTimer(fixTimer);
                         vscode.window.showErrorMessage(`Remediation failed: ${error}`);
                     }
                 }
@@ -771,6 +821,47 @@ export function activate(context: vscode.ExtensionContext) {
         }
     );
 
+    const showPerformanceReportCommand = vscode.commands.registerCommand(
+        'reposense.showPerformanceReport',
+        () => {
+            const report = performanceMonitor.generateReport();
+            const violations = performanceMonitor.checkBudgets();
+            const cacheStats = incrementalAnalyzer.getStats();
+
+            const fullReport = `${report}
+
+## Incremental Analysis Cache
+
+- **Hit Rate**: ${cacheStats.cacheHitRate.toFixed(1)}%
+- **Cache Size**: ${cacheStats.cacheSizeMB.toFixed(2)}MB
+- **Modified Files**: ${cacheStats.modifiedFiles}
+- **Changed Files**: ${incrementalAnalyzer.getChangedFiles().length}
+
+## Performance Budget Violations
+
+${violations.length === 0 ? '*No violations detected*' : violations.map(v => 
+    `- **${v.operation}** [${v.severity.toUpperCase()}]: ${v.actual.toFixed(0)}ms (expected: ${v.expected}ms, ${((v.actual - v.expected) / v.expected * 100).toFixed(0)}% over)`
+).join('\n')}
+
+## Recommendations
+
+${violations.length > 0 ? `
+Some operations exceeded performance budgets:
+${violations.filter(v => v.severity === 'critical').length > 0 ? '- **Critical**: Consider optimizing these operations immediately' : ''}
+${violations.filter(v => v.severity === 'warning').length > 0 ? '- **Warning**: Monitor these operations for future optimization' : ''}
+` : 'All operations are within performance budgets. Great work!'}
+`;
+
+            // Show in new document
+            vscode.workspace.openTextDocument({
+                content: fullReport,
+                language: 'markdown'
+            }).then(doc => {
+                vscode.window.showTextDocument(doc);
+            });
+        }
+    );
+
     context.subscriptions.push(
         scanCommand,
         generateTestsCommand,
@@ -792,8 +883,17 @@ export function activate(context: vscode.ExtensionContext) {
         generateFrontendCallCommand,
         analyzeCodeWithAICommand,
         generateReportCommand,
-        configureOllamaCommand
+        configureOllamaCommand,
+        showPerformanceReportCommand
     );
+
+    // Complete extension activation
+    performanceMonitor.endTimer(perfTimer);
+    
+    const activationStats = performanceMonitor.getStats('extension.activate');
+    if (activationStats && activationStats.count > 0) {
+        console.log(`Extension activated in ${activationStats.avgDuration.toFixed(0)}ms`);
+    }
 }
 
 export function deactivate(): Thenable<void> | undefined {

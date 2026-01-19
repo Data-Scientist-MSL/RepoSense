@@ -119,6 +119,11 @@
         "command": "reposense.configureOllama",
         "title": "RepoSense: Configure Ollama",
         "icon": "$(settings-gear)"
+      },
+      {
+        "command": "reposense.showPerformanceReport",
+        "title": "RepoSense: Show Performance Report",
+        "icon": "$(dashboard)"
       }
     ],
     "menus": {
@@ -255,6 +260,21 @@
           "type": "number",
           "default": 4,
           "description": "Maximum concurrent file analysis operations"
+        },
+        "reposense.performance.trackingEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable performance tracking and monitoring"
+        },
+        "reposense.performance.incrementalAnalysis": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable incremental analysis to skip unchanged files"
+        },
+        "reposense.performance.cacheTTL": {
+          "type": "number",
+          "default": 300000,
+          "description": "Cache TTL in milliseconds for analysis results (default: 5 minutes)"
         }
       }
     }
