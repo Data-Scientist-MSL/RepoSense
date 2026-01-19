@@ -1,198 +1,320 @@
 # Contributing to RepoSense
 
-Thank you for your interest in contributing to RepoSense! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to RepoSense! This document provides guidelines and instructions for contributing.
+
+## 📋 Table of Contents
+
+- [Code of Conduct](#code-of-conduct)
+- [Getting Started](#getting-started)
+- [Development Setup](#development-setup)
+- [Project Structure](#project-structure)
+- [Coding Standards](#coding-standards)
+- [Testing Guidelines](#testing-guidelines)
+- [Pull Request Process](#pull-request-process)
+- [Issue Guidelines](#issue-guidelines)
+
+---
+
+## 📜 Code of Conduct
+
+We are committed to providing a welcoming and inclusive environment. Please:
+
+- ✅ Be respectful and constructive
+- ✅ Welcome newcomers and help them learn
+- ✅ Focus on what is best for the community
+- ✅ Show empathy towards other community members
+- ❌ Use inappropriate language or personal attacks
+- ❌ Publish others' private information
+- ❌ Engage in trolling or insulting comments
+
+---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ 
-- VS Code 1.85.0+
-- Git
-- TypeScript knowledge
+Before contributing, ensure you have:
 
-### Setup Development Environment
+- **Node.js** 18.x or higher
+- **VS Code** 1.85.0 or higher
+- **Git** for version control
+- **Ollama** (optional, for testing AI features)
 
-1. Fork and clone the repository:
+### Fork & Clone
+
+1. Fork the repository on GitHub
+2. Clone your fork:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/RepoSense.git
+   cd RepoSense
+   ```
+3. Add upstream remote:
+   ```bash
+   git remote add upstream https://github.com/Data-Scientist-MSL/RepoSense.git
+   ```
+
+---
+
+## 🛠️ Development Setup
+
+### Installation
+
 ```bash
-git clone https://github.com/Data-Scientist-MSL/RepoSense.git
-cd RepoSense
-```
-
-2. Install dependencies:
-```bash
+# Install dependencies
 npm install
+
+# Compile TypeScript
+npm run compile
+
+# Run tests
+npm test
+
+# Watch mode (auto-compile on save)
+npm run watch
 ```
 
-3. Open in VS Code:
-```bash
-code .
-```
+### Running the Extension
 
-4. Press `F5` to launch Extension Development Host
+1. Open the project in VS Code
+2. Press `F5` to launch the Extension Development Host
+3. In the new VS Code window, open a test project
+4. Use Command Palette (`Ctrl+Shift+P`) to run RepoSense commands
 
-## 📝 Development Workflow
+### Debugging
 
-### Branch Strategy
+- **Extension Code**: Set breakpoints in `src/` files, press `F5`
+- **Language Server**: Set breakpoints in `src/server/`, attach debugger
+- **Tests**: Use `npm test` or VS Code Test Explorer
 
-- `main`: Production-ready code
-- `develop`: Integration branch
-- `feature/*`: New features
-- `bugfix/*`: Bug fixes
-- `hotfix/*`: Critical production fixes
+---
 
-### Commit Convention
-
-Follow [Conventional Commits](https://www.conventionalcommits.org/):
+## 📁 Project Structure
 
 ```
-feat: add gap detection for React hooks
-fix: resolve TreeView refresh issue
-docs: update API documentation
-test: add unit tests for ASTParser
-refactor: optimize cache service
+RepoSense/
+├── src/
+│   ├── extension.ts           # Extension entry point
+│   ├── providers/             # TreeView, CodeLens, CodeAction providers
+│   ├── services/              # Business logic services
+│   │   ├── llm/              # LLM integration (Ollama, test gen, etc.)
+│   │   └── DiagnosticsManager.ts
+│   ├── analysis/              # Code analysis modules
+│   ├── core/                  # Core scanning logic
+│   ├── models/                # TypeScript interfaces and types
+│   ├── utils/                 # Utilities (performance, error handling)
+│   ├── server/                # Language Server Protocol implementation
+│   └── test/                  # Test suites
+│       ├── suite/            # Unit tests
+│       ├── integration/      # Integration tests
+│       └── e2e/              # End-to-end tests
+├── media/                     # Icons, images, stylesheets
+├── docs/                      # Documentation
+├── package.json               # Extension manifest
+├── tsconfig.json             # TypeScript configuration
+└── README.md                  # Project readme
 ```
 
-## 🧪 Testing
+---
 
-### Run Tests
+## 🎨 Coding Standards
 
-```bash
-npm test                 # Run all tests
-npm run test:unit       # Unit tests only
-npm run test:integration # Integration tests only
-```
+### TypeScript Guidelines
 
-### Writing Tests
-
-Place tests in `src/test/` matching the source structure:
+- **Strict Mode**: Always use strict TypeScript (`"strict": true`)
+- **Explicit Types**: Avoid `any`, prefer explicit type annotations
+- **Async/Await**: Use async/await over raw Promises
+- **Arrow Functions**: Prefer arrow functions for callbacks
+- **Error Handling**: Always handle errors gracefully
 
 ```typescript
-import * as assert from 'assert';
-import { GapDetector } from '../services/analysis/GapDetector';
+// ✅ Good
+async function analyzeFile(filePath: string): Promise<AnalysisResult> {
+    try {
+        const content = await fs.readFile(filePath, 'utf-8');
+        return parseContent(content);
+    } catch (error) {
+        ErrorHandler.getInstance().handleError(error, {
+            context: 'analyzeFile',
+            filePath
+        });
+        throw error;
+    }
+}
 
-suite('GapDetector Test Suite', () => {
-    test('Should detect orphaned components', () => {
-        const detector = new GapDetector();
-        const gaps = detector.findOrphanedComponents(calls, endpoints);
-        assert.strictEqual(gaps.length, 2);
+// ❌ Bad
+function analyzeFile(filePath: any) {
+    fs.readFile(filePath, 'utf-8', (err, content) => {
+        if (err) console.error(err);
+        return parseContent(content);
+    });
+}
+```
+
+### Naming Conventions
+
+- **Classes**: PascalCase (`GapAnalysisProvider`)
+- **Interfaces**: PascalCase, prefix with `I` for clarity (`IGapItem`)
+- **Functions/Methods**: camelCase (`detectGaps()`)
+- **Constants**: UPPER_SNAKE_CASE (`MAX_CONCURRENT_REQUESTS`)
+- **Files**: PascalCase for classes (`GapAnalyzer.ts`), camelCase for utilities (`errorHandler.ts`)
+
+### Code Formatting
+
+We use Prettier for code formatting:
+
+```bash
+# Format all files
+npm run format
+
+# Check formatting
+npm run format:check
+```
+
+### Linting
+
+We use ESLint for code quality:
+
+```bash
+# Lint all files
+npm run lint
+
+# Fix auto-fixable issues
+npm run lint:fix
+```
+
+---
+
+## 🧪 Testing Guidelines
+
+### Test Coverage Requirements
+
+- **Unit Tests**: >= 80% line coverage, >= 85% function coverage
+- **Integration Tests**: Cover all major user workflows
+- **E2E Tests**: At least 3 sample projects with known gaps
+
+### Writing Unit Tests
+
+```typescript
+import { describe, it, before, after } from 'mocha';
+import { expect } from 'chai';
+import * as sinon from 'sinon';
+
+describe('OllamaService', () => {
+    let service: OllamaService;
+    let axiosStub: sinon.SinonStub;
+
+    before(() => {
+        service = new OllamaService();
+        axiosStub = sinon.stub(axios, 'post');
+    });
+
+    after(() => {
+        axiosStub.restore();
+    });
+
+    it('should generate code analysis', async () => {
+        axiosStub.resolves({
+            data: { response: 'This code is well-structured' }
+        });
+
+        const result = await service.analyzeCode('const x = 1;', 'typescript');
+        
+        expect(result).to.include('well-structured');
+        expect(axiosStub.calledOnce).to.be.true;
     });
 });
 ```
 
-## 📋 Code Style
-
-### TypeScript Guidelines
-
-- Use strict mode
-- Prefer `const` over `let`
-- Use async/await over promises
-- Add JSDoc comments for public APIs
-- Follow existing naming conventions
-
-### ESLint
+### Running Tests
 
 ```bash
-npm run lint           # Check for issues
-npm run lint:fix       # Auto-fix issues
+# Run all tests
+npm test
+
+# Run specific test file
+npm test -- --grep "OllamaService"
+
+# Run with coverage
+npm run coverage
+
+# Generate HTML coverage report
+npm run coverage:report
 ```
-
-## 🎯 Pull Request Process
-
-1. **Create Feature Branch**:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-
-2. **Make Changes**: Follow code style guidelines
-
-3. **Write Tests**: Ensure >80% coverage
-
-4. **Update Documentation**: Update README if needed
-
-5. **Commit Changes**: Use conventional commits
-
-6. **Push to Fork**:
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-
-7. **Create Pull Request**:
-   - Clear description of changes
-   - Link related issues
-   - Add screenshots for UI changes
-   - Ensure CI passes
-
-## 🐛 Bug Reports
-
-Use GitHub Issues with the following template:
-
-```markdown
-**Description**
-Clear description of the bug
-
-**Steps to Reproduce**
-1. Step one
-2. Step two
-3. ...
-
-**Expected Behavior**
-What should happen
-
-**Actual Behavior**
-What actually happens
-
-**Environment**
-- OS: [e.g., Windows 11]
-- VS Code Version: [e.g., 1.85.0]
-- Extension Version: [e.g., 0.1.0]
-
-**Screenshots**
-If applicable
-```
-
-## 💡 Feature Requests
-
-Use GitHub Issues with the `enhancement` label:
-
-```markdown
-**Feature Description**
-Clear description of the proposed feature
-
-**Use Case**
-Why is this feature needed?
-
-**Proposed Solution**
-How should it work?
-
-**Alternatives Considered**
-Other approaches you've thought about
-```
-
-## 📚 Documentation
-
-- Code comments for complex logic
-- JSDoc for public APIs
-- README updates for user-facing changes
-- Wiki updates for architectural changes
-
-## 🎖️ Recognition
-
-Contributors will be acknowledged in:
-- README.md Contributors section
-- Release notes
-- GitHub Contributors page
-
-## 📞 Questions?
-
-- GitHub Discussions for general questions
-- GitHub Issues for bug reports
-- Email: [maintainer email]
-
-## 📄 License
-
-By contributing, you agree that your contributions will be licensed under the MIT License.
 
 ---
 
-**Thank you for making RepoSense better!** 🚀
+## 🔄 Pull Request Process
+
+### 1. Create a Feature Branch
+
+```bash
+# Fetch latest changes
+git fetch upstream
+git checkout main
+git merge upstream/main
+
+# Create feature branch
+git checkout -b feature/your-feature-name
+```
+
+### 2. Make Your Changes
+
+- Write clean, well-documented code
+- Add tests for new features
+- Update documentation as needed
+- Follow coding standards
+
+### 3. Commit Your Changes
+
+We follow [Conventional Commits](https://www.conventionalcommits.org/):
+
+```bash
+# Feature
+git commit -m "feat: add support for Vue.js gap detection"
+
+# Bug fix
+git commit -m "fix: correct endpoint matching for nested routes"
+
+# Documentation
+git commit -m "docs: update getting started guide"
+
+# Performance
+git commit -m "perf: optimize AST parsing with caching"
+
+# Tests
+git commit -m "test: add integration tests for scan workflow"
+```
+
+**Types**: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`
+
+### 4. Push and Create PR
+
+```bash
+# Push to your fork
+git push origin feature/your-feature-name
+```
+
+Then create a Pull Request on GitHub with clear description and link to related issues.
+
+---
+
+## 🐛 Issue Guidelines
+
+### Before Creating an Issue
+
+1. **Search existing issues** to avoid duplicates
+2. **Check documentation** for answers
+3. **Update to latest version** to see if issue persists
+
+### Creating a Bug Report
+
+Include:
+- Clear description of the bug
+- Steps to reproduce
+- Expected vs actual behavior
+- Screenshots if applicable
+- Environment (OS, VS Code version, RepoSense version)
+
+---
+
+**Happy Contributing! 🚀**
