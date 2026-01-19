@@ -1,10 +1,14 @@
 {
   "name": "reposense",
-  "displayName": "RepoSense - Intelligent Code Analysis & UAT",
-  "description": "AI-powered frontend-backend gap detection, automated UAT generation, and intelligent remediation for modern codebases",
-  "version": "0.1.0",
+  "displayName": "RepoSense - AI Code Analyzer & UAT Assistant",
+  "description": "Intelligent frontend-backend gap detection, automated test generation, and one-click remediation. Zero-cost AI powered by local LLM.",
+  "version": "1.0.0",
   "publisher": "reposense",
   "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -18,12 +22,27 @@
     "analysis",
     "testing",
     "UAT",
+    "AI",
     "frontend",
     "backend",
     "gap-detection",
-    "AI",
-    "code-quality"
+    "code-quality",
+    "automation",
+    "ollama",
+    "deepseek",
+    "playwright",
+    "cypress",
+    "test-generation"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Data-Scientist-MSL/RepoSense.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Data-Scientist-MSL/RepoSense/issues"
+  },
+  "homepage": "https://github.com/Data-Scientist-MSL/RepoSense#readme",
+  "license": "MIT",
   "activationEvents": [
     "onStartupFinished"
   ],
