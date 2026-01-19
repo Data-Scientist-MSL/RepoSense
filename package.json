@@ -237,6 +237,11 @@
           "default": "auto",
           "description": "Preferred E2E testing framework for generated tests"
         },
+        "reposense.telemetry.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable anonymous error telemetry to help improve RepoSense (requires restart)"
+        },
         "reposense.excludePatterns": {
           "type": "array",
           "default": [

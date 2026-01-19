@@ -18,6 +18,7 @@ import { OllamaService } from './services/llm/OllamaService';
 import { TestGenerator } from './services/llm/TestGenerator';
 import { RemediationEngine } from './services/llm/RemediationEngine';
 import { ReportGenerator } from './services/llm/ReportGenerator';
+import { ErrorHandler } from './utils/ErrorHandler';
 
 let languageClient: LanguageClient;
 let codeLensProvider: RepoSenseCodeLensProvider;
@@ -31,8 +32,14 @@ let testGenerator: TestGenerator;
 let remediationEngine: RemediationEngine;
 let reportGenerator: ReportGenerator;
 
+// Epic 5: Error handling
+let errorHandler: ErrorHandler;
+
 export function activate(context: vscode.ExtensionContext) {
     console.log('RepoSense extension is now active!');
+
+    // Epic 5: Initialize error handling
+    errorHandler = ErrorHandler.getInstance();
 
     // Epic 4: Initialize LLM services
     ollamaService = new OllamaService();

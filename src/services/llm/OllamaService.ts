@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import * as vscode from 'vscode';
+import { handleError, withRetry } from '../../utils/ErrorHandler';
 
 export interface OllamaModelInfo {
     name: string;
@@ -61,18 +62,32 @@ export class OllamaService {
             return this.isAvailable;
         } catch (error) {
             this.isAvailable = false;
-            console.error('Ollama service not available:', error);
+            // Don't show error on health check - it's expected when Ollama is not running
             return false;
         }
     }
 
     public async listModels(): Promise<OllamaModelInfo[]> {
         try {
-            const response = await this.client.get('/api/tags');
-            return response.data.models || [];
+            return await withRetry(
+                async () => {
+                    const response = await this.client.get('/api/tags');
+                    return response.data.models || [];
+                },
+                { 
+                    maxAttempts: 2, 
+                    delayMs: 500,
+                    retryableErrors: ['ECONNREFUSED', 'ETIMEDOUT']
+                }
+            );
         } catch (error) {
-            console.error('Failed to list Ollama models:', error);
-            throw new Error('Ollama service is not available. Please ensure Ollama is running.');
+            await handleError(
+                error instanceof Error ? error : new Error(String(error)),
+                'List Ollama Models',
+                'OllamaService',
+                { severity: 'error', retryable: false }
+            );
+            return [];
         }
     }
 
@@ -112,29 +127,50 @@ export class OllamaService {
         }
 
         try {
-            const request: OllamaGenerateRequest = {
-                model: options?.model || this.defaultModel,
-                prompt: prompt,
-                stream: false,
-                temperature: options?.temperature ?? 0.2,
-                max_tokens: options?.max_tokens,
-                system: options?.system
-            };
+            return await withRetry(
+                async () => {
+                    const request: OllamaGenerateRequest = {
+                        model: options?.model || this.defaultModel,
+                        prompt: prompt,
+                        stream: false,
+                        temperature: options?.temperature ?? 0.2,
+                        max_tokens: options?.max_tokens,
+                        system: options?.system
+                    };
 
-            const response = await this.client.post<OllamaGenerateResponse>(
-                '/api/generate',
-                request
+                    const response = await this.client.post<OllamaGenerateResponse>(
+                        '/api/generate',
+                        request
+                    );
+
+                    return response.data.response.trim();
+                },
+                {
+                    maxAttempts: 3,
+                    delayMs: 1000,
+                    backoffMultiplier: 2,
+                    retryableErrors: ['ETIMEDOUT', 'ECONNRESET']
+                }
             );
-
-            return response.data.response.trim();
         } catch (error: any) {
             if (error.response?.status === 404) {
-                throw new Error(
-                    `Model ${options?.model || this.defaultModel} not found. ` +
-                    `Please pull the model first using: ollama pull ${options?.model || this.defaultModel}`
+                await handleError(
+                    new Error(
+                        `Model ${options?.model || this.defaultModel} not found. ` +
+                        `Please pull the model first using: ollama pull ${options?.model || this.defaultModel}`
+                    ),
+                    'Generate LLM Response',
+                    'OllamaService',
+                    { severity: 'error', retryable: false }
                 );
             }
-            throw new Error(`Failed to generate response: ${error.message}`);
+            await handleError(
+                error instanceof Error ? error : new Error(String(error)),
+                'Generate LLM Response',
+                'OllamaService',
+                { severity: 'error', retryable: true }
+            );
+            throw error;
         }
     }
 
