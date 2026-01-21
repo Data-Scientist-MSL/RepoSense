@@ -1,0 +1,107 @@
+# GitLab CI - RepoSense Quality Gate
+# Include this in your .gitlab-ci.yml
+
+stages:
+  - scan
+  - gate
+  - report
+  - export
+
+variables:
+  REPOSENSE_OUTPUT: ".reposense/cli-output"
+
+cache:
+  paths:
+    - node_modules/
+
+before_script:
+  - npm install
+
+reposense:scan:
+  stage: scan
+  image: node:18
+  script:
+    - npm run compile
+    - npm run cli -- scan --project .
+  artifacts:
+    paths:
+      - ${REPOSENSE_OUTPUT}/scan-result.json
+    reports:
+      dotenv: scan-results.env
+    expire_in: 30 days
+  allow_failure: true
+
+reposense:gate:
+  stage: gate
+  image: node:18
+  script:
+    - npm run compile
+    - npm run cli -- check --config .reposense/quality-gates.json
+  artifacts:
+    paths:
+      - ${REPOSENSE_OUTPUT}/check-result.json
+    reports:
+      dotenv: gate-results.env
+    expire_in: 30 days
+  # Fail on gate violations
+  allow_failure: false
+  dependencies:
+    - reposense:scan
+
+reposense:report:
+  stage: report
+  image: node:18
+  script:
+    - npm run compile
+    - npm run cli -- report --format html
+  artifacts:
+    paths:
+      - ${REPOSENSE_OUTPUT}/report.html
+      - ${REPOSENSE_OUTPUT}/report.json
+    expire_in: 30 days
+  dependencies:
+    - reposense:gate
+  allow_failure: true
+
+reposense:export:
+  stage: export
+  image: node:18
+  script:
+    - npm run compile
+    - npm run cli -- export
+  artifacts:
+    paths:
+      - ${REPOSENSE_OUTPUT}/export.json
+    expire_in: 30 days
+  dependencies:
+    - reposense:gate
+  allow_failure: true
+
+reposense:publish:
+  stage: export
+  image: node:18
+  script:
+    - mkdir -p public
+    - cp ${REPOSENSE_OUTPUT}/report.html public/index.html
+    - npm run cli -- badge --output public/quality-badge.svg
+  artifacts:
+    paths:
+      - public
+    expire_in: 30 days
+  only:
+    - main
+    - develop
+  dependencies:
+    - reposense:report
+
+pages:
+  stage: export
+  script:
+    - echo "RepoSense Report Published to GitLab Pages"
+  artifacts:
+    paths:
+      - public
+  only:
+    - main
+  dependencies:
+    - reposense:publish

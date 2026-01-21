@@ -1,10 +1,11 @@
 /**
- * ChatOrchestrator.ts (Sprint 11 - Day 2)
+ * ChatOrchestrator.ts (Sprint 11 - Day 2, Extended Sprint 13 Task #3)
  * 
  * Unified chat interface combining:
  * - RepoSense analysis-driven responses (gaps, endpoints, coverage)
  * - Dynamic command routing (intent-based)
  * - Artifact-backed data (no recompute)
+ * - Sprint 13: Preview generation integration (test generation from gaps)
  */
 
 import { ArtifactReader, Report, Graph } from './ArtifactReader';
@@ -265,6 +266,19 @@ Use commands like "show gaps", "coverage", or "recommendations" for more details
         label: 'Apply Recommendations',
         command: 'reposense.chat.recommendations',
         args: {},
+      });
+    }
+
+    // Sprint 13 Integration: Add test preview generation action for gaps
+    // User can generate test previews directly from chat for identified gaps
+    const hasRecommendations = report.recommendations && report.recommendations.length > 0;
+    if (hasRecommendations) {
+      actions.push({
+        label: 'Generate Test Preview',
+        command: 'reposense.generateTestPreview',
+        args: {
+          fromChat: true
+        },
       });
     }
 

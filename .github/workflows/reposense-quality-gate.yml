@@ -1,0 +1,103 @@
+name: RepoSense Quality Gate
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+jobs:
+  reposense-quality-gate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build RepoSense
+        run: npm run compile
+
+      - name: Run RepoSense Scan
+        id: scan
+        continue-on-error: true
+        run: |
+          npm run cli -- scan --project .
+
+      - name: Run Quality Gate Check
+        id: gate
+        continue-on-error: true
+        run: |
+          npm run cli -- check --config .reposense/quality-gates.json
+
+      - name: Generate Report
+        id: report
+        run: |
+          npm run cli -- report --format html
+
+      - name: Generate Export
+        id: export
+        run: |
+          npm run cli -- export
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: reposense-report
+          path: |
+            .reposense/cli-output/
+          retention-days: 30
+
+      - name: Publish Report to GitHub Pages
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .reposense/cli-output/
+          cname: reposense-report.example.com
+
+      - name: Create Quality Badge
+        run: |
+          npm run cli -- badge --output .reposense/cli-output/quality-badge.svg
+
+      - name: Comment PR with Results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const result = JSON.parse(fs.readFileSync('.reposense/cli-output/check-result.json', 'utf8'));
+            const status = result.exitCode === 0 ? '✅ PASS' : result.exitCode === 1 ? '❌ FAIL' : '⚠️ WARN';
+            const body = `
+            ## RepoSense Quality Gate
+            
+            **Status**: ${status}
+            
+            ${result.data?.report || ''}
+            
+            [View Full Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            `;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+      - name: Fail on Gate Violations
+        if: steps.gate.outcome == 'failure'
+        run: exit 1
+
+      - name: Success Summary
+        if: success()
+        run: |
+          echo "✅ All quality gates passed!"
+          echo "📊 Report: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
