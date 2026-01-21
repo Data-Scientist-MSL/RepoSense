@@ -26,6 +26,7 @@ import {
     ReportArtifact,
     GapItem
 } from '../models/RunOrchestrator';
+import { ArtifactWriter } from './run/ArtifactWriter';
 
 const VALID_TRANSITIONS: Record<RunState, RunState[]> = {
     [RunState.IDLE]: [RunState.SCANNING, RunState.CANCELLED],
@@ -272,6 +273,37 @@ export class RunOrchestrator implements IRunOrchestrator {
         const filePath = path.join(this.artifactRoot, 'runs', runId, 'scan.json');
         await this.ensureDir(path.dirname(filePath));
         fs.writeFileSync(filePath, JSON.stringify(artifact, null, 2));
+    }
+
+    /**
+     * Persist all Sprint 10 artifacts (graph, report, diagrams) from AnalysisResult.
+     * This is the unified integration point for Sprint 10 persistence.
+     */
+    async persistArtifacts(runId: string, analysisResult: any): Promise<void> {
+        const run = this.getRun(runId);
+        if (!run) throw new Error(`Run not found: ${runId}`);
+
+        try {
+            const writer = new ArtifactWriter(
+                run.workspaceRoot,
+                this.artifactRoot,
+                runId
+            );
+
+            await writer.writeAllArtifacts(analysisResult);
+
+            this.eventBus.emit('artifacts:persisted', runId, {
+                timestamp: Date.now(),
+                artifacts: ['scan.json', 'graph.json', 'report.json', 'diagrams']
+            });
+        } catch (error: any) {
+            this.recordError(
+                runId,
+                `Failed to persist artifacts: ${error.message}`,
+                'ERROR'
+            );
+            throw error;
+        }
     }
 
     async savePlans(runId: string, plans: (TestPlan | any)[]): Promise<void> {

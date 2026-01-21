@@ -152,6 +152,46 @@
         "command": "reposense.generateArchitectureDiagrams",
         "title": "RepoSense: Generate Architecture Diagrams",
         "icon": "$(symbol-structure)"
+      },
+      {
+        "command": "reposense.generateTestPreview",
+        "title": "RepoSense: Generate Test Preview",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "reposense.openTestPreview",
+        "title": "RepoSense: Open Test Preview",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "reposense.exportReviewBundle",
+        "title": "RepoSense: Export Review Bundle",
+        "icon": "$(export)"
+      },
+      {
+        "command": "reposense.compareRuns",
+        "title": "RepoSense: Compare Runs",
+        "icon": "$(diff)"
+      },
+      {
+        "command": "reposense.applyTestPreview",
+        "title": "RepoSense: Apply Test Preview",
+        "icon": "$(check)"
+      },
+      {
+        "command": "reposense.rollbackApply",
+        "title": "RepoSense: Rollback Last Apply",
+        "icon": "$(undo)"
+      },
+      {
+        "command": "reposense.executeGeneratedTests",
+        "title": "RepoSense: Execute Generated Tests",
+        "icon": "$(run)"
+      },
+      {
+        "command": "reposense.viewExecutionEvidence",
+        "title": "RepoSense: View Execution Evidence",
+        "icon": "$(file-text)"
       }
     ],
     "menus": {
