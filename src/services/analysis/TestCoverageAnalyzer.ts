@@ -8,7 +8,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { TestFile, TestCase, Endpoint, EndpointCoverageMatrix, GapItem, GapType, GapSeverity } from '../models/RunOrchestrator';
+import { TestFile, TestCase, Endpoint, EndpointCoverageMatrix, GapItem, GapType, GapSeverity } from '../../models/RunOrchestrator';
 
 export interface TestFrameworkConfig {
     testPatterns: string[];       // file patterns: *.test.ts, *.spec.ts, etc.
@@ -93,8 +93,8 @@ export class TestCoverageAnalyzer {
 
             // Find all tests that mention this endpoint
             for (const testFile of testFiles) {
-                const testsCoveringThis = testFile.testCases.filter(tc =>
-                    tc.endpoints.some(ep => this.isEndpointMatch(ep, endpoint.path, endpoint.method))
+                const testsCoveringThis = testFile.testCases.filter((tc: TestCase) =>
+                    tc.endpoints.some((ep: string) => this.isEndpointMatch(ep, endpoint.path, endpoint.method))
                 );
 
                 for (const test of testsCoveringThis) {

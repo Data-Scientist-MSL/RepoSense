@@ -16,20 +16,20 @@ import {
     GapItem,
     Endpoint,
     TestFramework,
-    RunOrchestrator
-} from '../models/RunOrchestrator';
+    IRunOrchestrator
+} from '../../models/RunOrchestrator';
 
 /**
  * Test generation service: coordinates generation, persistence, and application
  */
 export class TestGenerationService {
     private testGenerator: TestGenerator;
-    private orchestrator: RunOrchestrator;
+    private orchestrator: IRunOrchestrator;
     private workspaceRoot: string;
 
     constructor(
         ollamaService: OllamaService,
-        orchestrator: RunOrchestrator,
+        orchestrator: IRunOrchestrator,
         workspaceRoot: string
     ) {
         this.testGenerator = new TestGenerator(ollamaService);
@@ -135,11 +135,8 @@ export class TestGenerationService {
                 await this.writeTestFile(candidate);
                 console.log(`Applied test: ${candidate.suggestedPath}`);
             } catch (error) {
-                this.orchestrator.recordError(
-                    runId,
-                    `Failed to apply test ${candidate.suggestedPath}: ${error}`,
-                    'ERROR'
-                );
+                // TODO: recordError method doesn't exist on IRunOrchestrator
+                console.error(`Failed to apply test ${candidate.suggestedPath}:`, error);
             }
         }
     }

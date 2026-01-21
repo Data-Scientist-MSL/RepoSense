@@ -25,7 +25,8 @@ import { ErrorHandler } from './utils/ErrorHandler';
 import { PerformanceMonitor } from './utils/PerformanceMonitor';
 import { IncrementalAnalyzer } from './utils/IncrementalAnalyzer';
 import { Debouncer } from './utils/BatchProcessor';
-import { RunOrchestrator, getOrchestrator, RunConfig, TestFramework } from './services/RunOrchestrator';
+import { RunOrchestrator, getOrchestrator } from './services/RunOrchestrator';
+import { RunConfig, TestFramework } from './models/RunOrchestrator';
 import { TestGenerationService } from './services/llm/TestGenerationService';
 import { ArtifactStore, getArtifactStore } from './services/ArtifactStore';
 import { TestCoverageAnalyzer } from './services/analysis/TestCoverageAnalyzer';
@@ -378,8 +379,21 @@ export function activate(context: vscode.ExtensionContext) {
                                 timeline: [],
                                 metrics: {
                                     totalGapsDetected: allGaps.length,
-                                    gapsByCriticalityCount: {},
-                                    gapsByTypeCount: {},
+                                    gapsByCriticalityCount: {
+                                        CRITICAL: allGaps.filter(g => g.severity === 'CRITICAL').length,
+                                        HIGH: allGaps.filter(g => g.severity === 'HIGH').length,
+                                        MEDIUM: allGaps.filter(g => g.severity === 'MEDIUM').length,
+                                        LOW: allGaps.filter(g => g.severity === 'LOW').length
+                                    },
+                                    gapsByTypeCount: {
+                                        missing_endpoint: allGaps.filter(g => g.type === 'MISSING_ENDPOINT').length,
+                                        unused_endpoint: allGaps.filter(g => g.type === 'UNUSED_ENDPOINT').length,
+                                        untested_endpoint: allGaps.filter(g => g.type === 'UNTESTED_ENDPOINT').length,
+                                        type_mismatch: allGaps.filter(g => g.type === 'TYPE_MISMATCH').length,
+                                        missing_crud: allGaps.filter(g => g.type === 'MISSING_CRUD').length,
+                                        orphaned_component: allGaps.filter(g => g.type === 'ORPHANED_COMPONENT').length,
+                                        suggestion: allGaps.filter(g => g.type === 'SUGGESTION').length
+                                    },
                                     testsGenerated: testPlans.length,
                                     testsApplied: Math.min(3, testPlans.length),
                                     patchesGenerated: 0,
