@@ -1,9 +1,11 @@
 import { Connection } from 'vscode-languageserver/node';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
 import { AnalysisResult, GapItem, APICall, Endpoint } from '../models/types';
 import { FrontendAnalyzer } from '../../services/analysis/FrontendAnalyzer';
 import { BackendAnalyzer } from '../../services/analysis/BackendAnalyzer';
+import { GapItem as OrchestrationGapItem, GapType, GapSeverity, AnalysisArtifact } from '../../models/RunOrchestrator';
 
 export class AnalysisEngine {
     private connection: Connection;
@@ -35,17 +37,30 @@ export class AnalysisEngine {
             // Extract API calls from frontend
             for (const file of frontendFiles) {
                 const calls = await this.frontendAnalyzer.extractAPICalls(file);
-                apiCalls.push(...calls);
+                // Add stable call IDs
+                const callsWithIds = calls.map(call => ({
+                    ...call,
+                    callId: this.hashAPICall(call)
+                }));
+                apiCalls.push(...callsWithIds);
             }
 
             // Extract endpoints from backend
             for (const file of backendFiles) {
                 const eps = await this.backendAnalyzer.extractEndpoints(file);
-                endpoints.push(...eps);
+                // Add stable endpoint IDs
+                const epsWithIds = eps.map(ep => ({
+                    ...ep,
+                    endpointId: this.hashEndpoint(ep)
+                }));
+                endpoints.push(...epsWithIds);
             }
 
-            // Detect gaps
-            gaps.push(...this.detectGaps(apiCalls, endpoints));
+            // Detect gaps and add priority scoring
+            const rawGaps = this.detectGaps(apiCalls, endpoints);
+            const scoredGaps = this.scoreGaps(rawGaps, apiCalls, endpoints, workspaceRoot);
+
+            gaps.push(...scoredGaps);
 
             this.connection.console.log(`Analysis complete: ${gaps.length} gaps, ${apiCalls.length} API calls, ${endpoints.length} endpoints`);
 
@@ -198,5 +213,83 @@ export class AnalysisEngine {
             medium: gaps.filter(g => g.severity === 'MEDIUM').length,
             low: gaps.filter(g => g.severity === 'LOW').length
         };
+    }
+
+    // ========================================================================
+    // Stable ID & Priority Scoring (RunOrchestrator integration)
+    // ========================================================================
+
+    private hashAPICall(call: APICall): string {
+        const data = `${call.method}|${call.endpoint}|${call.file}|${call.line}|call`;
+        return crypto.createHash('sha256').update(data).digest('hex').substring(0, 16);
+    }
+
+    private hashEndpoint(ep: Endpoint): string {
+        const data = `${ep.method}|${ep.path}|${ep.file}|${ep.line}|endpoint`;
+        return crypto.createHash('sha256').update(data).digest('hex').substring(0, 16);
+    }
+
+    private hashGap(gap: GapItem): string {
+        const data = `${gap.type}|${gap.message}|${gap.file}|${gap.line}|${gap.severity}`;
+        return crypto.createHash('sha256').update(data).digest('hex').substring(0, 16);
+    }
+
+    private scoreGaps(
+        gaps: GapItem[],
+        apiCalls: any[],
+        endpoints: any[],
+        workspaceRoot: string
+    ): GapItem[] {
+        // Count gap frequencies and affected files
+        const gapFrequencies = new Map<string, number>();
+        const gapFiles = new Map<string, Set<string>>();
+
+        for (const gap of gaps) {
+            const gapKey = `${gap.type}|${gap.message}`;
+            gapFrequencies.set(gapKey, (gapFrequencies.get(gapKey) ?? 0) + 1);
+
+            if (!gapFiles.has(gapKey)) {
+                gapFiles.set(gapKey, new Set());
+            }
+            gapFiles.get(gapKey)!.add(gap.file);
+        }
+
+        // Enhance gaps with priority scoring
+        return gaps.map(gap => {
+            const gapKey = `${gap.type}|${gap.message}`;
+            const frequency = gapFrequencies.get(gapKey) ?? 1;
+            const blastRadius = gapFiles.get(gapKey)?.size ?? 1;
+
+            // Priority score: 0-100
+            // Factor 1: severity weight (40%)
+            const severityWeights: Record<string, number> = {
+                CRITICAL: 40,
+                HIGH: 30,
+                MEDIUM: 20,
+                LOW: 10
+            };
+            const severityScore = severityWeights[gap.severity] || 0;
+
+            // Factor 2: frequency weight (35%)
+            const frequencyScore = Math.min(35, frequency * 5);
+
+            // Factor 3: blast radius weight (25%)
+            const blastScore = Math.min(25, blastRadius * 2);
+
+            const priorityScore = Math.round(severityScore + frequencyScore + blastScore);
+
+            return {
+                ...gap,
+                gapId: this.hashGap(gap),
+                priorityScore: Math.min(100, priorityScore),
+                frequency,
+                blastRadius,
+                lastDetected: Date.now(),
+                status: 'OPEN',
+                linkedTests: [],
+                linkedPatches: [],
+                linkedExecutions: []
+            };
+        });
     }
 }

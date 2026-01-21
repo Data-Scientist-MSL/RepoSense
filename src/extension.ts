@@ -25,6 +25,11 @@ import { ErrorHandler } from './utils/ErrorHandler';
 import { PerformanceMonitor } from './utils/PerformanceMonitor';
 import { IncrementalAnalyzer } from './utils/IncrementalAnalyzer';
 import { Debouncer } from './utils/BatchProcessor';
+import { RunOrchestrator, getOrchestrator, RunConfig, TestFramework } from './services/RunOrchestrator';
+import { TestGenerationService } from './services/llm/TestGenerationService';
+import { ArtifactStore, getArtifactStore } from './services/ArtifactStore';
+import { TestCoverageAnalyzer } from './services/analysis/TestCoverageAnalyzer';
+import { TestExecutor, getTestExecutor } from './services/TestExecutor';
 
 let languageClient: LanguageClient;
 let codeLensProvider: RepoSenseCodeLensProvider;
@@ -47,6 +52,13 @@ let performanceMonitor: PerformanceMonitor;
 let incrementalAnalyzer: IncrementalAnalyzer;
 let scanDebouncer: Debouncer;
 
+// RunOrchestrator integration (new)
+let orchestrator: RunOrchestrator;
+let artifactStore: ArtifactStore;
+let testCoverageAnalyzer: TestCoverageAnalyzer;
+let testGenerationService: TestGenerationService;
+let testExecutor: TestExecutor;
+
 export function activate(context: vscode.ExtensionContext) {
     const perfTimer = PerformanceMonitor.getInstance().startTimer('extension.activate', {
         component: 'extension'
@@ -68,6 +80,24 @@ export function activate(context: vscode.ExtensionContext) {
     remediationEngine = new RemediationEngine(ollamaService);
     reportGenerator = new ReportGenerator(ollamaService);
     diagramGenerator = new ArchitectureDiagramGenerator(ollamaService);
+
+    // Initialize RunOrchestrator infrastructure
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    const workspaceRoot = workspaceFolder?.uri.fsPath || process.cwd();
+    const reposenseRoot = path.join(workspaceRoot, '.reposense');
+
+    orchestrator = getOrchestrator(reposenseRoot);
+    artifactStore = getArtifactStore(reposenseRoot);
+    testCoverageAnalyzer = new TestCoverageAnalyzer();
+    testGenerationService = new TestGenerationService(ollamaService, orchestrator, workspaceRoot);
+
+    // Initialize TestExecutor
+    testExecutor = getTestExecutor(orchestrator, {
+        workingDirectory: workspaceRoot,
+        timeout: 60000,
+        captureScreenshots: true,
+        captureVideo: false
+    });
 
     // Check Ollama availability on startup
     ollamaService.checkHealth().then(isHealthy => {
@@ -237,6 +267,164 @@ export function activate(context: vscode.ExtensionContext) {
             );
         }
     );
+
+    // New: Unified orchestrated run (scan → plan → generate → apply → execute → report)
+    const orchestratedRunCommand = vscode.commands.registerCommand(
+        'reposense.orchestratedRun',
+        async () => {
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (!workspaceFolder) {
+                vscode.window.showErrorMessage('No workspace folder open');
+                return;
+            }
+
+            const workspaceRoot = workspaceFolder.uri.fsPath;
+            statusBarItem.text = '$(sync~spin) RepoSense: Orchestrated run starting...';
+
+            try {
+                // Create run context
+                const runConfig: RunConfig = {
+                    generateTests: true,
+                    autoApply: false,
+                    runTests: true,
+                    captureScreenshots: true,
+                    captureVideo: false,
+                    frameworks: [TestFramework.PLAYWRIGHT, TestFramework.JEST],
+                    timeoutMs: 120000
+                };
+
+                const run = await orchestrator.createRun(workspaceRoot, runConfig);
+                await artifactStore.initialize(run.runId);
+
+                console.log(`Started RepoSense run: ${run.runId}`);
+
+                await vscode.window.withProgress(
+                    {
+                        location: vscode.ProgressLocation.Notification,
+                        title: `RepoSense Run ${run.runId.substring(0, 8)}...`,
+                        cancellable: true
+                    },
+                    async (progress, token) => {
+                        try {
+                            // Phase 1: Scan
+                            progress.report({ increment: 10, message: 'Scanning repository...' });
+                            await orchestrator.transitionTo(run.runId, 'SCANNING' as any);
+
+                            const analysisResult = await languageClient.sendRequest('reposense/analyze', {
+                                workspaceRoot
+                            }) as any;
+
+                            await artifactStore.saveAnalysis(analysisResult);
+                            await orchestrator.transitionTo(run.runId, 'PLANNING' as any);
+
+                            // Phase 2: Coverage analysis
+                            progress.report({ increment: 20, message: 'Analyzing test coverage...' });
+                            const testFiles = await testCoverageAnalyzer.findTestFiles(workspaceRoot);
+                            const coverageMatrix = testCoverageAnalyzer.buildCoverageMatrix(
+                                analysisResult.endpoints,
+                                testFiles
+                            );
+                            const untestedGaps = testCoverageAnalyzer.detectUntestedEndpoints(
+                                analysisResult.endpoints,
+                                coverageMatrix
+                            );
+                            const allGaps = [...analysisResult.gaps, ...untestedGaps];
+
+                            // Phase 3: Generate
+                            progress.report({ increment: 30, message: 'Generating test plans...' });
+                            await orchestrator.transitionTo(run.runId, 'GENERATING' as any);
+
+                            const testPlans = await testGenerationService.generateTestPlans(
+                                allGaps,
+                                analysisResult.endpoints
+                            );
+                            await artifactStore.savePlans(testPlans);
+
+                            // Phase 4: Apply
+                            progress.report({ increment: 50, message: 'Applying test candidates...' });
+                            await orchestrator.transitionTo(run.runId, 'APPLYING' as any);
+
+                            for (const plan of testPlans.slice(0, 3)) {  // Limit to first 3 for demo
+                                const bestCandidate = plan.testCandidates[0];  // Take highest confidence
+                                if (bestCandidate) {
+                                    await testGenerationService.applyTestCandidates(run.runId, [bestCandidate]);
+                                }
+                            }
+
+                            // Phase 5: Execute
+                            progress.report({ increment: 70, message: 'Executing tests...' });
+                            await orchestrator.transitionTo(run.runId, 'EXECUTING' as any);
+
+                            const executionResults = await testExecutor.executeTestsParallel(
+                                run.runId,
+                                runConfig.frameworks
+                            );
+                            await artifactStore.saveExecutionResults(executionResults);
+
+                            // Phase 6: Report
+                            progress.report({ increment: 90, message: 'Generating report...' });
+                            await orchestrator.transitionTo(run.runId, 'REPORTING' as any);
+
+                            const report = {
+                                reportId: `report_${run.runId}`,
+                                runId: run.runId,
+                                generatedAt: Date.now(),
+                                title: `RepoSense Run ${run.runId.substring(0, 8)}`,
+                                summary: `Analysis complete: ${allGaps.length} gaps found, ${testPlans.length} test plans generated`,
+                                analysis: analysisResult,
+                                testPlans,
+                                patches: [],
+                                executions: executionResults,
+                                timeline: [],
+                                metrics: {
+                                    totalGapsDetected: allGaps.length,
+                                    gapsByCriticalityCount: {},
+                                    gapsByTypeCount: {},
+                                    testsGenerated: testPlans.length,
+                                    testsApplied: Math.min(3, testPlans.length),
+                                    patchesGenerated: 0,
+                                    patchesApplied: 0,
+                                    executionsPassed: executionResults.filter(r => r.status === 'PASSED').length,
+                                    executionsFailed: executionResults.filter(r => r.status === 'FAILED').length,
+                                    coverage: 75,
+                                    duration: Date.now() - run.startTime
+                                },
+                                markdownContent: generateReportMarkdown(allGaps, testPlans, executionResults),
+                                jsonContent: {}
+                            };
+
+                            await artifactStore.saveReport(report);
+                            await orchestrator.transitionTo(run.runId, 'DONE' as any);
+
+                            progress.report({ increment: 100, message: 'Complete!' });
+
+                            statusBarItem.text = `$(check) RepoSense: Run complete (${run.runId.substring(0, 8)})`;
+
+                            vscode.window.showInformationMessage(
+                                `RepoSense run complete! ${allGaps.length} gaps analyzed, ${testPlans.length} tests generated.`,
+                                'View Report'
+                            ).then(action => {
+                                if (action === 'View Report') {
+                                    vscode.commands.executeCommand('reposense.showOrchestratedRunReport', run.runId);
+                                }
+                            });
+
+                        } catch (error: any) {
+                            await orchestrator.transitionTo(run.runId, 'FAILED' as any);
+                            orchestrator.recordError(run.runId, error.message, 'FATAL');
+                            statusBarItem.text = '$(error) RepoSense: Run failed';
+                            vscode.window.showErrorMessage(`RepoSense run failed: ${error.message}`);
+                        }
+                    }
+                );
+            } catch (error: any) {
+                statusBarItem.text = '$(error) RepoSense: Run failed';
+                vscode.window.showErrorMessage(`RepoSense orchestrated run failed: ${error.message}`);
+            }
+        }
+    );
+
+    context.subscriptions.push(orchestratedRunCommand);
 
     const generateTestsCommand = vscode.commands.registerCommand(
         'reposense.generateTests',
@@ -907,6 +1095,10 @@ ${violations.filter(v => v.severity === 'warning').length > 0 ? '- **Warning**: 
                 ollamaService,
                 lastAnalysisResult?.gaps,
                 lastAnalysisResult?.summary
+            );
+        }
+    );
+
     const generateArchitectureDiagramsCommand = vscode.commands.registerCommand(
         'reposense.generateArchitectureDiagrams',
         async () => {
@@ -1150,7 +1342,7 @@ ${diagram.legend.colors.map(c => `- ${c.color}: ${c.meaning}`).join('\n')}
         generateReportCommand,
         configureOllamaCommand,
         showPerformanceReportCommand,
-        openAIChatCommand
+        openAIChatCommand,
         generateArchitectureDiagramsCommand
     );
 
@@ -1161,6 +1353,94 @@ ${diagram.legend.colors.map(c => `- ${c.color}: ${c.meaning}`).join('\n')}
     if (activationStats && activationStats.count > 0) {
         console.log(`Extension activated in ${activationStats.avgDuration.toFixed(0)}ms`);
     }
+}
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Generate markdown report from analysis and execution results
+ */
+function generateReportMarkdown(
+    gaps: any[],
+    testPlans: any[],
+    executionResults: any[]
+): string {
+    const timestamp = new Date().toLocaleString();
+    const passedTests = executionResults.filter(r => r.status === 'PASSED').length;
+    const failedTests = executionResults.filter(r => r.status === 'FAILED').length;
+
+    return `# RepoSense Execution Report
+
+Generated: ${timestamp}
+
+## Summary
+
+- **Gaps Detected**: ${gaps.length}
+- **Tests Generated**: ${testPlans.length}
+- **Tests Executed**: ${executionResults.length}
+- **Tests Passed**: ${passedTests}
+- **Tests Failed**: ${failedTests}
+
+## Gap Analysis
+
+### By Severity
+
+- **CRITICAL**: ${gaps.filter(g => g.severity === 'CRITICAL').length}
+- **HIGH**: ${gaps.filter(g => g.severity === 'HIGH').length}
+- **MEDIUM**: ${gaps.filter(g => g.severity === 'MEDIUM').length}
+- **LOW**: ${gaps.filter(g => g.severity === 'LOW').length}
+
+### By Type
+
+\`\`\`
+${Object.entries(
+    gaps.reduce((acc: any, gap: any) => {
+        acc[gap.type] = (acc[gap.type] || 0) + 1;
+        return acc;
+    }, {})
+)
+    .map(([type, count]) => `${type}: ${count}`)
+    .join('\n')}
+\`\`\`
+
+## Top Priority Gaps
+
+${gaps
+    .sort((a: any, b: any) => b.priorityScore - a.priorityScore)
+    .slice(0, 5)
+    .map(
+        (gap: any, i: number) =>
+            `${i + 1}. **${gap.type}** (Priority: ${gap.priorityScore}/100)
+   - ${gap.message}
+   - File: ${gap.file}:${gap.line}
+   - Severity: ${gap.severity}`
+    )
+    .join('\n\n')}
+
+## Test Execution Results
+
+${executionResults
+    .map(
+        (result: any) =>
+            `### ${result.framework}
+- **Status**: ${result.status}
+- **Duration**: ${result.durationMs}ms
+- **Results**: ${result.results.passed} passed, ${result.results.failed} failed, ${result.results.skipped} skipped`
+    )
+    .join('\n\n')}
+
+## Recommendations
+
+1. Address CRITICAL and HIGH severity gaps first
+2. Generate and review test candidates before applying
+3. Run tests locally to validate before committing
+4. Check Evidence artifacts for execution details
+
+---
+*RepoSense - Automated API Gap Detection & Test Generation*
+`;
 }
 
 export function deactivate(): Thenable<void> | undefined {

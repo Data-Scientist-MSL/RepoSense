@@ -4,7 +4,6 @@
   "description": "Intelligent frontend-backend gap detection, automated test generation, and one-click remediation. Zero-cost AI powered by local LLM.",
   "version": "1.0.0",
   "publisher": "reposense",
-  "icon": "media/icon.png",
   "galleryBanner": {
     "color": "#1e1e1e",
     "theme": "dark"
@@ -148,6 +147,8 @@
         "command": "reposense.openAIChat",
         "title": "RepoSense: Open AI Assistant Chat",
         "icon": "$(comment-discussion)"
+      },
+      {
         "command": "reposense.generateArchitectureDiagrams",
         "title": "RepoSense: Generate Architecture Diagrams",
         "icon": "$(symbol-structure)"
