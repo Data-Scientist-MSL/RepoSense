@@ -1,13 +1,20 @@
 import * as vscode from 'vscode';
 import { GapItem } from '../models/types';
 
+interface AnalysisSummary {
+    critical?: number;
+    high?: number;
+    medium?: number;
+    low?: number;
+}
+
 export class ReportPanel {
     public static currentPanel: ReportPanel | undefined;
     private readonly _panel: vscode.WebviewPanel;
     private readonly _extensionUri: vscode.Uri;
     private _disposables: vscode.Disposable[] = [];
     private _gaps: GapItem[] = [];
-    private _summary: any = {};
+    private _summary: AnalysisSummary = {};
 
     private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
         this._panel = panel;
@@ -39,47 +46,127 @@ export class ReportPanel {
         this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
     }
 
-    public static createOrShow(extensionUri: vscode.Uri, gaps: GapItem[], summary: any) {
-        const column = vscode.window.activeTextEditor
-            ? vscode.window.activeTextEditor.viewColumn
-            : undefined;
+    public static createOrShow(extensionUri: vscode.Uri, gaps: GapItem[], summary: AnalysisSummary) {
+        try {
+            const column = vscode.window.activeTextEditor
+                ? vscode.window.activeTextEditor.viewColumn
+                : undefined;
 
-        // If we already have a panel, show it
-        if (ReportPanel.currentPanel) {
-            ReportPanel.currentPanel._panel.reveal(column);
-            ReportPanel.currentPanel.updateData(gaps, summary);
-            return;
-        }
-
-        // Otherwise, create a new panel
-        const panel = vscode.window.createWebviewPanel(
-            'reposenseReport',
-            'RepoSense Report',
-            column || vscode.ViewColumn.One,
-            {
-                enableScripts: true,
-                localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'media')],
-                retainContextWhenHidden: true
+            // If we already have a panel, show it
+            if (ReportPanel.currentPanel) {
+                try {
+                    ReportPanel.currentPanel._panel.reveal(column);
+                    ReportPanel.currentPanel.updateData(gaps, summary);
+                } catch (error) {
+                    console.error('Error revealing existing report panel:', error);
+                    // Panel might be disposed, create a new one
+                    ReportPanel.currentPanel = undefined;
+                    ReportPanel.createOrShow(extensionUri, gaps, summary);
+                }
+                return;
             }
-        );
 
-        ReportPanel.currentPanel = new ReportPanel(panel, extensionUri);
-        ReportPanel.currentPanel.updateData(gaps, summary);
+            // Validate input data
+            if (!gaps || !Array.isArray(gaps)) {
+                vscode.window.showWarningMessage('Invalid report data: gaps must be an array');
+                return;
+            }
+
+            // Otherwise, create a new panel
+            const panel = vscode.window.createWebviewPanel(
+                'reposenseReport',
+                'RepoSense Report',
+                column || vscode.ViewColumn.One,
+                {
+                    enableScripts: true,
+                    localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'media')],
+                    retainContextWhenHidden: true
+                }
+            );
+
+            ReportPanel.currentPanel = new ReportPanel(panel, extensionUri);
+            ReportPanel.currentPanel.updateData(gaps, summary);
+        } catch (error) {
+            console.error('Error creating report panel:', error);
+            vscode.window.showErrorMessage(
+                'Failed to open report panel. Opening as markdown instead...'
+            );
+            // Fallback to markdown
+            ReportPanel._openAsMarkdown(gaps, summary);
+        }
     }
 
-    public updateData(gaps: GapItem[], summary: any) {
-        this._gaps = gaps;
-        this._summary = summary;
-        this._update();
+    private static async _openAsMarkdown(gaps: GapItem[], summary: AnalysisSummary) {
+        try {
+            const content = ReportPanel._generateMarkdownReport(gaps, summary);
+            const doc = await vscode.workspace.openTextDocument({
+                content: content,
+                language: 'markdown'
+            });
+            await vscode.window.showTextDocument(doc);
+        } catch (error) {
+            console.error('Error opening markdown fallback:', error);
+            vscode.window.showErrorMessage('Failed to open report');
+        }
+    }
+
+    private static _generateMarkdownReport(gaps: GapItem[], _summary: AnalysisSummary): string {
+        const critical = gaps.filter(g => g.severity === 'CRITICAL');
+        const high = gaps.filter(g => g.severity === 'HIGH');
+        const medium = gaps.filter(g => g.severity === 'MEDIUM');
+        const low = gaps.filter(g => g.severity === 'LOW');
+
+        return `# RepoSense Analysis Report
+
+## Summary
+- **Total Gaps**: ${gaps.length}
+- **Critical**: ${critical.length}
+- **High**: ${high.length}
+- **Medium**: ${medium.length}
+- **Low**: ${low.length}
+
+## Critical Gaps
+${critical.length > 0 ? critical.map(g => `- **${g.message}** (${g.file}:${g.line})`).join('\n') : 'None'}
+
+## High Priority Gaps
+${high.length > 0 ? high.map(g => `- **${g.message}** (${g.file}:${g.line})`).join('\n') : 'None'}
+
+## All Gaps
+${gaps.map((g, i) => `${i + 1}. [${g.severity}] ${g.message} - ${g.file}:${g.line}`).join('\n')}
+`;
+    }
+
+    public updateData(gaps: GapItem[], summary: AnalysisSummary) {
+        try {
+            // Validate data
+            if (!gaps || !Array.isArray(gaps)) {
+                console.error('Invalid gaps data provided to updateData');
+                return;
+            }
+
+            this._gaps = gaps;
+            this._summary = summary || {};
+            this._update();
+        } catch (error) {
+            console.error('Error updating report data:', error);
+            vscode.window.showErrorMessage('Failed to update report');
+        }
     }
 
     private _update() {
-        this._panel.webview.html = this._getHtmlContent();
+        try {
+            if (!this._panel || this._panel.webview === undefined) {
+                console.error('Cannot update: panel or webview is undefined');
+                return;
+            }
+            this._panel.webview.html = this._getHtmlContent();
+        } catch (error) {
+            console.error('Error updating report panel:', error);
+            vscode.window.showErrorMessage('Failed to render report');
+        }
     }
 
     private _getHtmlContent(): string {
-        const webview = this._panel.webview;
-        
         // Group gaps by severity
         const critical = this._gaps.filter(g => g.severity === 'CRITICAL');
         const high = this._gaps.filter(g => g.severity === 'HIGH');
@@ -394,7 +481,7 @@ export class ReportPanel {
             return '<p>No gaps found in this category.</p>';
         }
 
-        const rows = gaps.map((gap, index) => `
+        const rows = gaps.map((gap) => `
             <tr onclick="openFile('${gap.file}', ${gap.line})">
                 <td><span class="severity-badge badge-${gap.severity.toLowerCase()}">${gap.severity}</span></td>
                 <td>${gap.type.replace('_', ' ')}</td>
@@ -425,55 +512,78 @@ export class ReportPanel {
     }
 
     private _handleExport(format: string) {
-        if (format === 'json') {
-            this._exportJSON();
-        } else if (format === 'csv') {
-            this._exportCSV();
+        try {
+            if (format === 'json') {
+                this._exportJSON();
+            } else if (format === 'csv') {
+                this._exportCSV();
+            }
+        } catch (error) {
+            console.error('Error handling export:', error);
+            vscode.window.showErrorMessage(`Failed to export report: ${error}`);
         }
     }
 
     private async _exportJSON() {
-        const data = {
-            timestamp: new Date().toISOString(),
-            summary: this._summary,
-            gaps: this._gaps
-        };
+        try {
+            const data = {
+                timestamp: new Date().toISOString(),
+                summary: this._summary,
+                gaps: this._gaps
+            };
 
-        const uri = await vscode.window.showSaveDialog({
-            defaultUri: vscode.Uri.file('reposense-report.json'),
-            filters: { 'JSON': ['json'] }
-        });
+            const uri = await vscode.window.showSaveDialog({
+                defaultUri: vscode.Uri.file('reposense-report.json'),
+                filters: { 'JSON': ['json'] }
+            });
 
-        if (uri) {
-            const content = JSON.stringify(data, null, 2);
-            await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf8'));
-            vscode.window.showInformationMessage(`Report exported to ${uri.fsPath}`);
+            if (uri) {
+                const content = JSON.stringify(data, null, 2);
+                await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf8'));
+                vscode.window.showInformationMessage(`Report exported to ${uri.fsPath}`);
+            }
+        } catch (error) {
+            console.error('Error exporting JSON:', error);
+            vscode.window.showErrorMessage(`Failed to export JSON report: ${error}`);
         }
     }
 
     private async _exportCSV() {
-        const headers = 'Severity,Type,Message,File,Line,Suggested Fix';
-        const rows = this._gaps.map(gap => 
-            `${gap.severity},${gap.type},"${gap.message}",${gap.file},${gap.line},"${gap.suggestedFix || ''}"`
-        );
-        const csv = [headers, ...rows].join('\n');
+        try {
+            const headers = 'Severity,Type,Message,File,Line,Suggested Fix';
+            const rows = this._gaps.map(gap => 
+                `${gap.severity},${gap.type},"${gap.message?.replace(/"/g, '""') || ''}",${gap.file},${gap.line},"${gap.suggestedFix?.replace(/"/g, '""') || ''}"`
+            );
+            const csv = [headers, ...rows].join('\n');
 
-        const uri = await vscode.window.showSaveDialog({
-            defaultUri: vscode.Uri.file('reposense-report.csv'),
-            filters: { 'CSV': ['csv'] }
-        });
+            const uri = await vscode.window.showSaveDialog({
+                defaultUri: vscode.Uri.file('reposense-report.csv'),
+                filters: { 'CSV': ['csv'] }
+            });
 
-        if (uri) {
-            await vscode.workspace.fs.writeFile(uri, Buffer.from(csv, 'utf8'));
-            vscode.window.showInformationMessage(`Report exported to ${uri.fsPath}`);
+            if (uri) {
+                await vscode.workspace.fs.writeFile(uri, Buffer.from(csv, 'utf8'));
+                vscode.window.showInformationMessage(`Report exported to ${uri.fsPath}`);
+            }
+        } catch (error) {
+            console.error('Error exporting CSV:', error);
+            vscode.window.showErrorMessage(`Failed to export CSV report: ${error}`);
         }
     }
 
     private _openFile(file: string, line: number) {
-        const uri = vscode.Uri.file(file);
-        vscode.window.showTextDocument(uri, {
-            selection: new vscode.Range(line - 1, 0, line - 1, 0)
-        });
+        try {
+            const uri = vscode.Uri.file(file);
+            vscode.window.showTextDocument(uri, {
+                selection: new vscode.Range(line - 1, 0, line - 1, 0)
+            }).then(undefined, (error) => {
+                console.error('Error opening file:', error);
+                vscode.window.showErrorMessage(`Failed to open file: ${file}`);
+            });
+        } catch (error) {
+            console.error('Error in _openFile:', error);
+            vscode.window.showErrorMessage(`Failed to open file: ${file}`);
+        }
     }
 
     public dispose() {

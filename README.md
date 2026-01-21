@@ -20,6 +20,7 @@
 ### 🤖 **AI-Powered Analysis (100% Local)**
 - **Zero-Cost AI**: Powered by [Ollama](https://ollama.ai) running locally - no API keys, no subscriptions
 - **DeepSeek-Coder-V2**: Uses state-of-the-art code-specific LLM for accurate analysis
+- **Interactive AI Chat**: Get conversational guidance on fixing gaps with context-aware recommendations
 - **Automated Test Generation**: Generates Playwright/Cypress tests for detected gaps
 - **Smart Remediation**: Suggests code fixes with AI-powered analysis
 - **Executive Reports**: Creates comprehensive markdown/HTML reports with metrics
@@ -43,6 +44,7 @@
 - **TreeView Integration**: Browse gaps by severity, type, or file
 - **CodeLens Annotations**: See gaps inline in your code
 - **Quick Fixes**: Apply AI-generated fixes with one click
+- **AI Chat Assistant**: Interactive conversational interface for guidance and remediation
 - **Interactive Reports**: Beautiful webview reports with charts and metrics
 - **Dark/Light Theme Support**: Seamlessly integrates with your VS Code theme
 
@@ -117,7 +119,26 @@ test('POST /api/users should create user', async ({ request }) => {
 });
 ```
 
-### 4️⃣ **Apply Quick Fixes**
+### 4️⃣ **Chat with AI Assistant**
+```bash
+# Get interactive help with your gaps
+> RepoSense: Open AI Assistant Chat
+```
+
+Ask questions like:
+- "How do I fix the missing /api/users endpoint?"
+- "What are the security implications of this gap?"
+- "What's the best testing strategy for my endpoints?"
+
+The AI assistant provides:
+- Context-aware recommendations based on your gap analysis
+- Step-by-step remediation guidance
+- Pros and cons of different approaches
+- Best practices and security considerations
+
+See the [AI Chat Guide](docs/ai-chat-guide.md) for detailed usage.
+
+### 5️⃣ **Apply Quick Fixes**
 Click **Quick Fix** on a gap to:
 - Generate missing backend endpoint
 - Add test coverage
@@ -200,6 +221,7 @@ Open Settings (`Ctrl+,` / `Cmd+,`) and search for "RepoSense":
 ## 📖 Documentation
 
 - [Getting Started (5-Minute Walkthrough)](docs/getting-started.md)
+- [AI Chat Assistant Guide](docs/ai-chat-guide.md) ⭐ **NEW**
 - [Gap Detection Guide](docs/gap-detection.md)
 - [Test Generation Guide](docs/test-generation.md)
 - [Remediation Guide](docs/remediation.md)

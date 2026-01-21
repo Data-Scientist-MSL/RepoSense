@@ -38,6 +38,13 @@ export class OllamaService {
     private baseUrl: string;
     private defaultModel: string;
     private isAvailable: boolean = false;
+    
+    // Circuit breaker state
+    private failureCount: number = 0;
+    private lastFailureTime: number = 0;
+    private circuitOpen: boolean = false;
+    private readonly failureThreshold: number = 5;
+    private readonly circuitResetTimeout: number = 60000; // 1 minute
 
     constructor() {
         const config = vscode.workspace.getConfiguration('reposense');
@@ -54,6 +61,39 @@ export class OllamaService {
 
         // Check availability on initialization
         this.checkHealth();
+    }
+
+    private checkCircuitBreaker(): void {
+        if (this.circuitOpen) {
+            const timeSinceLastFailure = Date.now() - this.lastFailureTime;
+            
+            // Try to reset circuit after timeout
+            if (timeSinceLastFailure > this.circuitResetTimeout) {
+                console.log('Circuit breaker: attempting to reset');
+                this.circuitOpen = false;
+                this.failureCount = 0;
+            } else {
+                throw new Error(
+                    `Service temporarily unavailable. Circuit breaker is open. ` +
+                    `Will retry in ${Math.ceil((this.circuitResetTimeout - timeSinceLastFailure) / 1000)}s`
+                );
+            }
+        }
+    }
+
+    private recordSuccess(): void {
+        this.failureCount = 0;
+        this.circuitOpen = false;
+    }
+
+    private recordFailure(): void {
+        this.failureCount++;
+        this.lastFailureTime = Date.now();
+        
+        if (this.failureCount >= this.failureThreshold) {
+            console.warn(`Circuit breaker: opening circuit after ${this.failureCount} failures`);
+            this.circuitOpen = true;
+        }
     }
 
     public async checkHealth(): Promise<boolean> {
@@ -120,15 +160,19 @@ export class OllamaService {
         prompt: string,
         options?: Partial<OllamaGenerateRequest>
     ): Promise<string> {
+        // Check circuit breaker before attempting request
+        this.checkCircuitBreaker();
+        
         if (!this.isAvailable) {
             const available = await this.checkHealth();
             if (!available) {
+                this.recordFailure();
                 throw new Error('Ollama service is not available. Please start Ollama and try again.');
             }
         }
 
         try {
-            return await withRetry(
+            const result = await withRetry(
                 async () => {
                     const request: OllamaGenerateRequest = {
                         model: options?.model || this.defaultModel,
@@ -153,7 +197,14 @@ export class OllamaService {
                     retryableErrors: ['ETIMEDOUT', 'ECONNRESET']
                 }
             );
+            
+            // Record success if we got here
+            this.recordSuccess();
+            return result;
         } catch (error: any) {
+            // Record failure for circuit breaker
+            this.recordFailure();
+            
             if (error.response?.status === 404) {
                 await handleError(
                     new Error(

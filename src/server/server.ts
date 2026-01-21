@@ -39,18 +39,34 @@ connection.onInitialized(() => {
 connection.onRequest('reposense/analyze', async (params: { workspaceRoot: string }) => {
     connection.console.log(`Analyzing repository: ${params.workspaceRoot}`);
     
+    // Set a timeout for the analysis operation
+    const timeoutMs = 300000; // 5 minutes
+    const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Analysis timeout: operation took longer than 5 minutes')), timeoutMs);
+    });
+    
     try {
-        const result = await analysisEngine.analyzeRepository(params.workspaceRoot);
+        const analysisPromise = analysisEngine.analyzeRepository(params.workspaceRoot);
+        const result = await Promise.race([analysisPromise, timeoutPromise]) as any;
         connection.console.log(`Analysis complete. Found ${result.gaps.length} gaps`);
         return result;
-    } catch (error) {
-        connection.console.error(`Analysis failed: ${error}`);
+    } catch (error: any) {
+        const errorMessage = error?.message || String(error);
+        connection.console.error(`Analysis failed: ${errorMessage}`);
+        
+        // Log the stack trace for debugging
+        if (error?.stack) {
+            connection.console.error(`Stack trace: ${error.stack}`);
+        }
+        
+        // Return empty result with error indication
         return {
             gaps: [],
             apiCalls: [],
             endpoints: [],
             timestamp: Date.now(),
-            summary: { critical: 0, high: 0, medium: 0, low: 0 }
+            summary: { critical: 0, high: 0, medium: 0, low: 0 },
+            error: errorMessage
         };
     }
 });
@@ -59,12 +75,26 @@ connection.onRequest('reposense/analyze', async (params: { workspaceRoot: string
 connection.onRequest('reposense/analyzeFile', async (params: { filePath: string }) => {
     connection.console.log(`Analyzing file: ${params.filePath}`);
     
+    // Set a timeout for file analysis
+    const timeoutMs = 30000; // 30 seconds
+    const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('File analysis timeout: operation took longer than 30 seconds')), timeoutMs);
+    });
+    
     try {
-        const result = await analysisEngine.analyzeFile(params.filePath);
+        const analysisPromise = analysisEngine.analyzeFile(params.filePath);
+        const result = await Promise.race([analysisPromise, timeoutPromise]) as any;
         return result;
-    } catch (error) {
-        connection.console.error(`File analysis failed: ${error}`);
-        return { gaps: [] };
+    } catch (error: any) {
+        const errorMessage = error?.message || String(error);
+        connection.console.error(`File analysis failed: ${errorMessage}`);
+        
+        // Log the stack trace for debugging
+        if (error?.stack) {
+            connection.console.error(`Stack trace: ${error.stack}`);
+        }
+        
+        return { gaps: [], error: errorMessage };
     }
 });
 

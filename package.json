@@ -145,6 +145,9 @@
         "icon": "$(dashboard)"
       },
       {
+        "command": "reposense.openAIChat",
+        "title": "RepoSense: Open AI Assistant Chat",
+        "icon": "$(comment-discussion)"
         "command": "reposense.generateArchitectureDiagrams",
         "title": "RepoSense: Generate Architecture Diagrams",
         "icon": "$(symbol-structure)"
