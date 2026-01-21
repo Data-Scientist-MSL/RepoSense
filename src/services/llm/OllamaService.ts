@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import * as vscode from 'vscode';
 import { handleError, withRetry } from '../../utils/ErrorHandler';
+import { GapItem } from '../../models/types';
 
 export interface OllamaModelInfo {
     name: string;
@@ -404,5 +405,106 @@ Return ONLY a JSON array of endpoints, e.g., ["POST /api/users", "GET /api/produ
         this.defaultModel = modelName;
         const config = vscode.workspace.getConfiguration('reposense');
         config.update('llmModel', modelName, vscode.ConfigurationTarget.Global);
+    }
+
+    /**
+     * Analyze code architecture and extract component relationships
+     */
+    public async analyzeArchitecture(
+        code: string,
+        filePath: string,
+        gaps: GapItem[]
+    ): Promise<string> {
+        const systemPrompt = `You are an expert software architect. Analyze code architecture and identify:
+1. Component types (UI, Service, Controller, Database, etc.)
+2. Dependencies and relationships
+3. Data flow patterns
+4. Architectural patterns used
+5. Integration points`;
+
+        const prompt = `Analyze the architecture of this code from ${filePath}:
+
+\`\`\`
+${code}
+\`\`\`
+
+Known issues:
+${gaps.map(g => `- ${g.message}`).join('\n')}
+
+Provide:
+1. Component type
+2. Key dependencies
+3. Data flow direction
+4. Architectural concerns
+
+Format as JSON:
+{
+    "componentType": "UI|Service|Controller|Database",
+    "dependencies": ["dep1", "dep2"],
+    "dataFlow": "inbound|outbound|bidirectional",
+    "concerns": ["concern1"]
+}`;
+
+        return this.generate(prompt, { system: systemPrompt, temperature: 0.1 });
+    }
+
+    /**
+     * Generate architecture improvement recommendations
+     */
+    public async generateArchitectureRecommendations(
+        gaps: GapItem[],
+        currentArchitecture: string
+    ): Promise<string> {
+        const systemPrompt = `You are a senior software architect specializing in UI/UX improvements and system design.`;
+
+        const prompt = `Given this current architecture state:
+
+${currentArchitecture}
+
+And these identified issues:
+${gaps.map(g => `- [${g.severity}] ${g.message}`).join('\n')}
+
+Provide architectural recommendations to:
+1. Resolve identified defects
+2. Improve UI/UX patterns
+3. Enhance component structure
+4. Optimize data flow
+5. Address performance and accessibility
+
+Format as structured recommendations with priority levels.`;
+
+        return this.generate(prompt, { system: systemPrompt, temperature: 0.3 });
+    }
+
+    /**
+     * Identify UI/UX architectural patterns and anti-patterns
+     */
+    public async analyzeUIUXPatterns(
+        code: string,
+        componentType: string
+    ): Promise<string> {
+        const systemPrompt = `You are a UI/UX architecture expert. Identify patterns and anti-patterns in frontend code.`;
+
+        const prompt = `Analyze UI/UX patterns in this ${componentType} component:
+
+\`\`\`
+${code}
+\`\`\`
+
+Identify:
+1. State management patterns (good/bad)
+2. Component composition patterns
+3. Data fetching strategies
+4. User interaction patterns
+5. Accessibility patterns
+6. Performance patterns
+7. Rendering optimization
+
+Categorize each finding as:
+- ✅ Good Pattern
+- ⚠️ Anti-Pattern
+- 💡 Improvement Opportunity`;
+
+        return this.generate(prompt, { system: systemPrompt, temperature: 0.2 });
     }
 }
