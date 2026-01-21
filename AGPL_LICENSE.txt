@@ -1,0 +1,36 @@
+GNU AFFERO GENERAL PUBLIC LICENSE
+Version 3, 19 November 2007
+
+Copyright (C) 2026 RepoSense Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+ADDITIONAL TERMS:
+
+If you modify this program, you must cause all modified files to carry
+prominent notices stating that you changed the files and the date of
+any change. You must license the entire program, under this License,
+free of charge to all third parties, and make the source code available
+to them.
+
+If you run a modified program on a server and let other users
+communicate with it there (for example, through a web browser your
+program displays to a user on a client computer), you must transmit
+to those users the source code of the version running on your server.
+
+---
+
+Full license text available at: https://www.gnu.org/licenses/agpl-3.0.html
+
+For commercial licensing inquiries, contact: licensing@reposense.io
