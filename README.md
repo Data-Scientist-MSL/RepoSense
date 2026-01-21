@@ -1,7 +1,8 @@
 # RepoSense - Intelligent Repository Analyzer & UAT Assistant
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://marketplace.visualstudio.com/items?itemName=reposense.reposense)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-AGPL%203.0-green.svg)](AGPL_LICENSE.txt)
+[![Open Source](https://img.shields.io/badge/open%20source-AGPL%203.0-brightgreen.svg)](https://github.com/Data-Scientist-MSL/RepoSense)
 [![Build Status](https://github.com/Data-Scientist-MSL/RepoSense/workflows/CI/badge.svg)](https://github.com/Data-Scientist-MSL/RepoSense/actions)
 [![Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen.svg)](https://github.com/Data-Scientist-MSL/RepoSense)
 
@@ -348,7 +349,25 @@ See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+**GNU Affero General Public License v3.0** - see [AGPL_LICENSE.txt](AGPL_LICENSE.txt) for full details.
+
+RepoSense is committed to the open source community. The AGPL-3.0 license ensures:
+- ✅ All improvements benefit the community
+- ✅ No closed-source forks
+- ✅ Fair contribution model
+
+**Commercial licensing available** for enterprises. Contact: licensing@reposense.io
+
+---
+
+## 🌐 Open Source
+
+RepoSense is **100% open source** and welcomes community contributions!
+
+- **Repository**: [github.com/Data-Scientist-MSL/RepoSense](https://github.com/Data-Scientist-MSL/RepoSense)
+- **Contributing Guide**: [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Community Discord**: [Join our community](https://discord.gg/reposense)
+- **Feature Brochure**: [BROCHURE.md](BROCHURE.md)
 
 ---
 
