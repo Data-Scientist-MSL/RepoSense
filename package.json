@@ -143,6 +143,11 @@
         "command": "reposense.showPerformanceReport",
         "title": "RepoSense: Show Performance Report",
         "icon": "$(dashboard)"
+      },
+      {
+        "command": "reposense.generateArchitectureDiagrams",
+        "title": "RepoSense: Generate Architecture Diagrams",
+        "icon": "$(symbol-structure)"
       }
     ],
     "menus": {

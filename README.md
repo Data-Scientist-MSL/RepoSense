@@ -23,6 +23,15 @@
 - **Automated Test Generation**: Generates Playwright/Cypress tests for detected gaps
 - **Smart Remediation**: Suggests code fixes with AI-powered analysis
 - **Executive Reports**: Creates comprehensive markdown/HTML reports with metrics
+- **Architecture Diagrams**: Auto-generate L1/L2/L3 architecture diagrams showing defects and improvements
+
+### 📊 **Architecture Visualization**
+- **Multi-Level Diagrams**: Generate L1 (high-level), L2 (component), and L3 (technical) architecture views
+- **As-Is vs To-Be**: Visualize current architecture with defects and proposed improvements
+- **Mermaid Format**: Diagrams render in VS Code, GitHub, and can be exported to PNG/SVG
+- **UI/UX Defect Highlighting**: Identify component structure, data flow, and state management issues
+- **Side-by-Side Comparison**: See before/after architecture with detailed difference tracking
+- **Report Integration**: Include architecture diagrams in executive reports
 
 ### ✅ **Automated UAT & Testing**
 - **One-Click Test Generation**: Generate complete test suites for untested endpoints
@@ -114,7 +123,21 @@ Click **Quick Fix** on a gap to:
 - Add test coverage
 - Fix frontend API call
 
-### 5️⃣ **Generate Executive Report**
+### 5️⃣ **Generate Architecture Diagrams**
+```bash
+> RepoSense: Generate Architecture Diagrams
+```
+
+Visualize your architecture with AI-generated diagrams:
+- **L1 (High-Level)**: System overview for executives
+- **L2 (Component)**: Detailed interactions for developers
+- **L3 (Technical)**: Deep UI/UX patterns and implementation
+- **As-Is vs To-Be**: Compare current state with proposed improvements
+- Export as Mermaid diagrams (renders in VS Code, GitHub, exportable to PNG/SVG)
+
+See [Architecture Diagrams Documentation](docs/ARCHITECTURE_DIAGRAMS.md) for details.
+
+### 6️⃣ **Generate Executive Report**
 ```bash
 > RepoSense: Generate Executive Report
 ```
@@ -122,6 +145,8 @@ Click **Quick Fix** on a gap to:
 Get a comprehensive report with:
 - Gap summary by severity
 - Code coverage metrics
+- **Architecture diagrams** (choose "Markdown with Diagrams")
+- UI/UX defect analysis
 - Recommendations
 - Export to Markdown/HTML/JSON
 
