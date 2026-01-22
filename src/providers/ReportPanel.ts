@@ -12,7 +12,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { RunGraph } from '../models/ReportAndDiagramModels';
-import { DiagramGenerator } from './DiagramGenerator';
+import { DiagramGenerator } from '../services/DiagramGenerator';
 
 /**
  * ReportPanel
@@ -167,7 +167,7 @@ export class ReportPanel {
         editor.selection = new vscode.Selection(lineNum, 0, lineNum, 0);
         editor.revealRange(
           new vscode.Range(lineNum, 0, lineNum, 0),
-          vscode.TextEditorRevealType.Center
+          vscode.TextEditorRevealType.InCenter
         );
       });
     });
@@ -463,7 +463,7 @@ export class ReportPanel {
             <div>
                 <div class="diagram-title">${d.title}</div>
                 <div class="mermaid-container" style="display: none;">
-                    <pre>${d.mermaidSource}</pre>
+                    <pre>${d.source}</pre>
                 </div>
                 <button onclick="loadDiagram('${d.id}')">View Diagram</button>
             </div>

@@ -27,12 +27,10 @@ export interface HealthCheck {
 }
 
 export class RunHealthService {
-  private artifactIO: SafeArtifactIO;
   private artifactRoot: string;
 
   constructor(workspaceRoot: string, artifactRoot: string = '.reposense') {
     this.artifactRoot = path.join(workspaceRoot, artifactRoot);
-    this.artifactIO = new SafeArtifactIO(workspaceRoot, artifactRoot);
   }
 
   /**
@@ -121,7 +119,7 @@ export class RunHealthService {
 
   private async checkLockedRuns(): Promise<HealthCheck> {
     try {
-      const lockedRuns = this.artifactIO.getLockedRuns();
+      const lockedRuns = SafeArtifactIO.getLockedRuns(this.artifactRoot);
 
       if (lockedRuns.length === 0) {
         return {
@@ -212,7 +210,7 @@ export class RunHealthService {
         };
       }
 
-      const latest = await this.artifactIO.readJsonSafe<{ runId: string }>(latestPath);
+      const latest = SafeArtifactIO.readJsonSafe(latestPath) as { runId: string };
       const runDir = path.join(this.artifactRoot, 'runs', latest.runId);
 
       if (!fs.existsSync(runDir)) {
@@ -260,7 +258,7 @@ export class RunHealthService {
         const scanPath = path.join(runsDir, runId, 'scan.json');
         if (fs.existsSync(scanPath)) {
           try {
-            await this.artifactIO.readJsonSafe(scanPath);
+            SafeArtifactIO.readJsonSafe(scanPath);
           } catch {
             invalidCount++;
           }
@@ -304,13 +302,13 @@ export class RunHealthService {
    * Attempt to recover from locked runs.
    */
   async recoverLockedRuns(): Promise<{ recovered: number; failed: number }> {
-    const lockedRuns = this.artifactIO.getLockedRuns();
+    const lockedRuns = SafeArtifactIO.getLockedRuns(this.artifactRoot);
     let recovered = 0;
     let failed = 0;
 
-    for (const runId of lockedRuns) {
+    for (const run of lockedRuns) {
       try {
-        await this.artifactIO.removeLockFile(runId);
+        SafeArtifactIO.removeLockFile(run.lockFile);
         recovered++;
       } catch {
         failed++;

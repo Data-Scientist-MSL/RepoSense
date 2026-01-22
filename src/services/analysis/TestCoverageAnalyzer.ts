@@ -10,6 +10,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { TestFile, TestCase, Endpoint, EndpointCoverageMatrix, GapItem, GapType, GapSeverity } from '../../models/RunOrchestrator';
 
+// Re-export TestCase for convenience
+export { TestCase };
+
 export interface TestFrameworkConfig {
     testPatterns: string[];       // file patterns: *.test.ts, *.spec.ts, etc.
     extractTestCases: (content: string, filePath: string) => TestCase[];

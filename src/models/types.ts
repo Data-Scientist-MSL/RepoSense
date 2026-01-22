@@ -22,6 +22,7 @@ export interface Endpoint {
     file: string;
     line: number;
     handler: string;
+    controller?: string;  // Added for RunGraphBuilder compatibility
 }
 
 export interface AnalysisResult {
@@ -35,4 +36,7 @@ export interface AnalysisResult {
         medium: number;
         low: number;
     };
+    calls?: number;  // Added for RunGraphBuilder compatibility
+    linesAnalyzed?: number;  // Added for RunGraphBuilder compatibility
+    durationMs?: number;  // Added for RunGraphBuilder compatibility
 }

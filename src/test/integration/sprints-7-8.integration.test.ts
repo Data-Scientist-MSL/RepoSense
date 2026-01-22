@@ -4,7 +4,7 @@
  * Tests for performance, error handling, and production readiness
  */
 
-import * as assert from 'assert';
+import assert from 'assert';
 import { suite, test } from 'mocha';
 import PerformanceOptimizer from '../../services/PerformanceOptimizerNew';
 import {

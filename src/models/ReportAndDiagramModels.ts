@@ -517,17 +517,4 @@ export interface RunDelta {
 }
 
 // ============================================================================
-// TYPE EXPORTS for convenience
-// ============================================================================
-
-export type {
-  RunGraph,
-  GraphNode,
-  GraphEdge,
-  ReportDocument,
-  ReportSection,
-  ReportContent,
-  DiagramRegistry,
-  DiagramEntry,
-  RunSummary,
-};
+// Note: Main exports are at top of file. No need for duplicate type exports.

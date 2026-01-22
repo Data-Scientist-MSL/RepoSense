@@ -10,7 +10,7 @@
  * - T5: Export integrity (exports include all artifacts)
  */
 
-import * as assert from 'assert';
+import assert from 'assert';
 
 /**
  * T1: No-Mutation Guarantee

@@ -285,14 +285,12 @@ export class RunOrchestrator implements IRunOrchestrator {
 
         try {
             const writer = new ArtifactWriter(
-                run.workspaceRoot,
-                this.artifactRoot,
-                runId
+                run.workspaceRoot
             );
 
-            await writer.writeAllArtifacts(analysisResult);
+            await writer.writeAllArtifacts(runId, analysisResult);
 
-            this.eventBus.emit('artifacts:persisted', runId, {
+            this.eventBus.emit('scan:complete', runId, {
                 timestamp: Date.now(),
                 artifacts: ['scan.json', 'graph.json', 'report.json', 'diagrams']
             });

@@ -4,7 +4,7 @@
  * Tests for deterministic diagrams, evidence collection, and ChatBot assistant
  */
 
-import * as assert from 'assert';
+import assert from 'assert';
 import { suite, test } from 'mocha';
 import { DiagramGenerator, DiagramType } from '../../services/DiagramGeneratorNew';
 import { EvidenceService, ArtifactType } from '../../services/EvidenceServiceNew';

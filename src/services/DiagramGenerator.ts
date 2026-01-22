@@ -16,7 +16,7 @@ import {
   GraphNode,
   GraphEdge,
   DiagramRegistry,
-  Diagram,
+  DiagramEntry,
 } from '../models/ReportAndDiagramModels';
 
 /**
@@ -32,11 +32,12 @@ import {
 export class DiagramGenerator {
   private runId: string;
   private graph: RunGraph;
-  private diagrams: DiagramRegistry = { diagrams: [] };
+  private diagrams: DiagramRegistry = { runId: '', diagrams: [] };
 
   constructor(runId: string, graph: RunGraph) {
     this.runId = runId;
     this.graph = graph;
+    this.diagrams.runId = runId;
   }
 
   /**
@@ -56,21 +57,25 @@ export class DiagramGenerator {
   private generateSystemContextDiagram(): void {
     const mermaidCode = this.buildSystemContextMermaid();
 
-    const diagram: Diagram = {
+    const diagram: DiagramEntry = {
       id: 'system-context',
-      type: 'SYSTEM_CONTEXT',
       title: 'System Context Diagram',
       description: 'High-level overview of modules and interactions',
-      mermaidSource: mermaidCode,
-      metadata: {
-        nodeCount: this.graph.nodes.length,
-        edgeCount: this.graph.edges.length,
-        generatedAt: new Date().toISOString(),
-      },
+      diagramType: 'MERMAID',
+      source: mermaidCode,
+      generatedAt: new Date().toISOString(),
       confidence: 0.92,
-      qualityScore: 0.85,
-      clickableNodes: this.extractClickableNodes(),
-      exportFormats: ['SVG', 'PNG', 'PDF'],
+      inputGraphNodesUsed: this.graph.nodes.length,
+      inputGraphEdgesUsed: this.graph.edges.length,
+      quality: {
+        isComplete: true,
+        coverage: 100,
+      },
+      interactive: {
+        clickableNodes: this.extractClickableNodes(),
+        tooltips: true,
+        linkedToEvidence: true,
+      },
     };
 
     this.diagrams.diagrams.push(diagram);
@@ -83,20 +88,25 @@ export class DiagramGenerator {
   private generateApiFlowDiagram(): void {
     const mermaidCode = this.buildApiFlowMermaid();
 
-    const diagram: Diagram = {
+    const diagram: DiagramEntry = {
       id: 'api-flow',
-      type: 'API_FLOW',
       title: 'API Flow Diagram',
       description: 'Sequence of frontend calls → backend endpoints → tests → evidence',
-      mermaidSource: mermaidCode,
-      metadata: {
-        flowStages: 4,
-        generatedAt: new Date().toISOString(),
-      },
+      diagramType: 'MERMAID',
+      source: mermaidCode,
+      generatedAt: new Date().toISOString(),
       confidence: 0.88,
-      qualityScore: 0.80,
-      clickableNodes: this.extractClickableNodes(),
-      exportFormats: ['SVG', 'PNG', 'PDF'],
+      inputGraphNodesUsed: this.graph.nodes.length,
+      inputGraphEdgesUsed: this.graph.edges.length,
+      quality: {
+        isComplete: true,
+        coverage: 100,
+      },
+      interactive: {
+        clickableNodes: this.extractClickableNodes(),
+        tooltips: true,
+        linkedToEvidence: true,
+      },
     };
 
     this.diagrams.diagrams.push(diagram);
@@ -109,22 +119,25 @@ export class DiagramGenerator {
   private generateCoverageMapDiagram(): void {
     const mermaidCode = this.buildCoverageMapMermaid();
 
-    const diagram: Diagram = {
+    const diagram: DiagramEntry = {
       id: 'coverage-map',
-      type: 'COVERAGE_MAP',
       title: 'Test Coverage Map',
       description: 'Endpoints by module, color-coded by coverage %',
-      mermaidSource: mermaidCode,
-      metadata: {
-        modulesCount: this.countModules(),
-        endpointCount: this.countEndpoints(),
-        averageCoverage: this.calculateAverageCoverage(),
-        generatedAt: new Date().toISOString(),
-      },
+      diagramType: 'MERMAID',
+      source: mermaidCode,
+      generatedAt: new Date().toISOString(),
       confidence: 0.95,
-      qualityScore: 0.90,
-      clickableNodes: this.extractClickableNodes(),
-      exportFormats: ['SVG', 'PNG', 'PDF'],
+      inputGraphNodesUsed: this.graph.nodes.length,
+      inputGraphEdgesUsed: this.graph.edges.length,
+      quality: {
+        isComplete: true,
+        coverage: 100,
+      },
+      interactive: {
+        clickableNodes: this.extractClickableNodes(),
+        tooltips: true,
+        linkedToEvidence: true,
+      },
     };
 
     this.diagrams.diagrams.push(diagram);
@@ -320,20 +333,10 @@ export class DiagramGenerator {
   /**
    * Extract clickable nodes for diagram interactivity
    */
-  private extractClickableNodes(): Array<{
-    nodeId: string;
-    sourceFile: string;
-    lineNumber: number;
-    label: string;
-  }> {
+  private extractClickableNodes(): string[] {
     return this.graph.nodes
       .filter(n => n.file && n.line)
-      .map(n => ({
-        nodeId: n.id,
-        sourceFile: n.file!,
-        lineNumber: n.line!,
-        label: n.label,
-      }));
+      .map(n => n.id);
   }
 
   /**
@@ -396,7 +399,7 @@ export class DiagramGenerator {
     for (const diagram of this.diagrams.diagrams) {
       const filename = `${diagram.id}.mmd`;
       const filepath = path.join(outputDir, filename);
-      fs.writeFileSync(filepath, diagram.mermaidSource);
+      fs.writeFileSync(filepath, diagram.source);
     }
 
     // Save diagrams registry
@@ -407,14 +410,14 @@ export class DiagramGenerator {
   /**
    * Get diagram by ID
    */
-  getDiagram(diagramId: string): Diagram | undefined {
+  getDiagram(diagramId: string): DiagramEntry | undefined {
     return this.diagrams.diagrams.find(d => d.id === diagramId);
   }
 
   /**
    * Get all diagrams
    */
-  getAllDiagrams(): Diagram[] {
+  getAllDiagrams(): DiagramEntry[] {
     return this.diagrams.diagrams;
   }
 }

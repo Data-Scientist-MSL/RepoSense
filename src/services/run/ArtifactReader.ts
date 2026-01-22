@@ -87,7 +87,7 @@ export class ArtifactReader {
    */
   async readGraph(runId: string): Promise<Graph> {
     const graphPath = path.join(this.runsDir, runId, 'graph.json');
-    return this.readJsonFile(graphPath) as Promise<Graph>;
+    return this.readJsonFile(graphPath) as unknown as Promise<Graph>;
   }
 
   /**
@@ -96,7 +96,7 @@ export class ArtifactReader {
    */
   async readReport(runId: string): Promise<Report> {
     const reportPath = path.join(this.runsDir, runId, 'report.json');
-    return this.readJsonFile(reportPath) as Promise<Report>;
+    return this.readJsonFile(reportPath) as unknown as Promise<Report>;
   }
 
   /**
@@ -104,7 +104,7 @@ export class ArtifactReader {
    */
   async readDiagramsIndex(runId: string): Promise<DiagramsIndex> {
     const indexPath = path.join(this.runsDir, runId, 'diagrams', 'index.json');
-    return this.readJsonFile(indexPath) as Promise<DiagramsIndex>;
+    return this.readJsonFile(indexPath) as unknown as Promise<DiagramsIndex>;
   }
 
   /**
@@ -132,7 +132,7 @@ export class ArtifactReader {
     }
 
     try {
-      return this.readJsonFile(deltaPath) as Promise<Delta>;
+      return this.readJsonFile(deltaPath) as unknown as Promise<Delta>;
     } catch {
       return null;
     }

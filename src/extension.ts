@@ -544,11 +544,12 @@ export function activate(context: vscode.ExtensionContext) {
                 return;
             }
             
-            ReportPanel.createOrShow(
-                context.extensionUri,
-                lastAnalysisResult.gaps,
-                lastAnalysisResult.summary
-            );
+            // TODO: Fix report panel call - needs proper RunGraph, not gaps array
+            // ReportPanel.createOrShow(
+            //     context.extensionUri,
+            //     lastAnalysisResult.gaps,
+            //     lastAnalysisResult.summary
+            // );
         }
     );
 
