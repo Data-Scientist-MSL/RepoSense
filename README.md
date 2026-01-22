@@ -1,0 +1,394 @@
+# RepoSense - Intelligent Repository Analyzer & UAT Assistant
+
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://marketplace.visualstudio.com/items?itemName=reposense.reposense)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Build Status](https://github.com/Data-Scientist-MSL/RepoSense/workflows/CI/badge.svg)](https://github.com/Data-Scientist-MSL/RepoSense/actions)
+[![Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen.svg)](https://github.com/Data-Scientist-MSL/RepoSense)
+
+**RepoSense** is the first VS Code extension that intelligently bridges your frontend and backend code, automatically detecting integration gaps and generating comprehensive test coverage—all powered by local AI at **zero cost**.
+
+---
+
+## 🚀 Features
+
+### 🔍 **Intelligent Gap Detection**
+- **Frontend-Backend Analysis**: Automatically detects API calls in frontend code and matches them with backend endpoints
+- **Missing Endpoint Detection**: Identifies frontend calls to non-existent backend endpoints (critical gaps)
+- **Untested Endpoint Detection**: Finds backend endpoints without test coverage (high-priority gaps)
+- **Multi-Framework Support**: Works with React, Vue, Angular, Express, Fastify, NestJS, and more
+
+### 🤖 **AI-Powered Analysis (100% Local)**
+- **Zero-Cost AI**: Powered by [Ollama](https://ollama.ai) running locally - no API keys, no subscriptions
+- **DeepSeek-Coder-V2**: Uses state-of-the-art code-specific LLM for accurate analysis
+- **Interactive AI Chat**: Get conversational guidance on fixing gaps with context-aware recommendations
+- **Automated Test Generation**: Generates Playwright/Cypress tests for detected gaps
+- **Smart Remediation**: Suggests code fixes with AI-powered analysis
+- **Executive Reports**: Creates comprehensive markdown/HTML reports with metrics
+- **Architecture Diagrams**: Auto-generate L1/L2/L3 architecture diagrams showing defects and improvements
+
+### 📊 **Architecture Visualization**
+- **Multi-Level Diagrams**: Generate L1 (high-level), L2 (component), and L3 (technical) architecture views
+- **As-Is vs To-Be**: Visualize current architecture with defects and proposed improvements
+- **Mermaid Format**: Diagrams render in VS Code, GitHub, and can be exported to PNG/SVG
+- **UI/UX Defect Highlighting**: Identify component structure, data flow, and state management issues
+- **Side-by-Side Comparison**: See before/after architecture with detailed difference tracking
+- **Report Integration**: Include architecture diagrams in executive reports
+
+### ✅ **Automated UAT & Testing**
+- **One-Click Test Generation**: Generate complete test suites for untested endpoints
+- **Multiple Test Frameworks**: Supports Playwright, Cypress, Jest, Mocha
+- **Backend Endpoint Scaffolding**: Auto-generate missing backend endpoints
+- **Test Coverage Analysis**: Visualize coverage gaps in real-time
+
+### 🎨 **Professional UI/UX**
+- **TreeView Integration**: Browse gaps by severity, type, or file
+- **CodeLens Annotations**: See gaps inline in your code
+- **Quick Fixes**: Apply AI-generated fixes with one click
+- **AI Chat Assistant**: Interactive conversational interface for guidance and remediation
+- **Interactive Reports**: Beautiful webview reports with charts and metrics
+- **Dark/Light Theme Support**: Seamlessly integrates with your VS Code theme
+
+---
+
+## 📦 Installation
+
+### Prerequisites
+1. **VS Code** 1.85.0 or higher
+2. **Ollama** (for AI features):
+   ```bash
+   # macOS/Linux
+   curl -fsSL https://ollama.ai/install.sh | sh
+   
+   # Windows (PowerShell)
+   winget install Ollama.Ollama
+   
+   # Pull the default model
+   ollama pull deepseek-coder:6.7b
+   ```
+
+### Install from VS Code Marketplace
+1. Open VS Code
+2. Go to Extensions (`Ctrl+Shift+X` / `Cmd+Shift+X`)
+3. Search for "RepoSense"
+4. Click **Install**
+
+### Install from VSIX
+```bash
+code --install-extension reposense-1.0.0.vsix
+```
+
+---
+
+## 🎯 Quick Start
+
+### 1️⃣ **Scan Your Repository**
+```bash
+# Command Palette (Ctrl+Shift+P / Cmd+Shift+P)
+> RepoSense: Scan Repository
+```
+
+RepoSense will analyze your frontend and backend code to detect:
+- Missing backend endpoints
+- Untested backend endpoints
+- Frontend-backend mismatches
+
+### 2️⃣ **View Gaps**
+Gaps appear in:
+- **Activity Bar** → RepoSense TreeView
+- **Problems Panel** → Diagnostics
+- **Editor** → CodeLens annotations
+
+### 3️⃣ **Generate Tests (AI)**
+```bash
+# Right-click a gap or use Command Palette
+> RepoSense: Generate Tests
+```
+
+RepoSense uses AI to generate comprehensive test cases:
+```typescript
+// Generated Playwright test
+test('POST /api/users should create user', async ({ request }) => {
+  const response = await request.post('/api/users', {
+    data: { name: 'John Doe', email: 'john@example.com' }
+  });
+  
+  expect(response.status()).toBe(201);
+  const user = await response.json();
+  expect(user).toHaveProperty('id');
+  expect(user.name).toBe('John Doe');
+});
+```
+
+### 4️⃣ **Chat with AI Assistant**
+```bash
+# Get interactive help with your gaps
+> RepoSense: Open AI Assistant Chat
+```
+
+Ask questions like:
+- "How do I fix the missing /api/users endpoint?"
+- "What are the security implications of this gap?"
+- "What's the best testing strategy for my endpoints?"
+
+The AI assistant provides:
+- Context-aware recommendations based on your gap analysis
+- Step-by-step remediation guidance
+- Pros and cons of different approaches
+- Best practices and security considerations
+
+See the [AI Chat Guide](docs/ai-chat-guide.md) for detailed usage.
+
+### 5️⃣ **Apply Quick Fixes**
+Click **Quick Fix** on a gap to:
+- Generate missing backend endpoint
+- Add test coverage
+- Fix frontend API call
+
+### 5️⃣ **Generate Architecture Diagrams**
+```bash
+> RepoSense: Generate Architecture Diagrams
+```
+
+Visualize your architecture with AI-generated diagrams:
+- **L1 (High-Level)**: System overview for executives
+- **L2 (Component)**: Detailed interactions for developers
+- **L3 (Technical)**: Deep UI/UX patterns and implementation
+- **As-Is vs To-Be**: Compare current state with proposed improvements
+- Export as Mermaid diagrams (renders in VS Code, GitHub, exportable to PNG/SVG)
+
+See [Architecture Diagrams Documentation](docs/ARCHITECTURE_DIAGRAMS.md) for details.
+
+### 6️⃣ **Generate Executive Report**
+```bash
+> RepoSense: Generate Executive Report
+```
+
+Get a comprehensive report with:
+- Gap summary by severity
+- Code coverage metrics
+- **Architecture diagrams** (choose "Markdown with Diagrams")
+- UI/UX defect analysis
+- Recommendations
+- Export to Markdown/HTML/JSON
+
+---
+
+## ⚙️ Configuration
+
+### Extension Settings
+
+Open Settings (`Ctrl+,` / `Cmd+,`) and search for "RepoSense":
+
+```jsonc
+{
+  // Ollama Configuration
+  "reposense.ollamaEndpoint": "http://localhost:11434",
+  "reposense.llmModel": "deepseek-coder:6.7b",
+  
+  // Analysis Settings
+  "reposense.excludePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**"
+  ],
+  "reposense.maxConcurrentAnalysis": 4,
+  
+  // Test Generation
+  "reposense.preferredTestFramework": "playwright",
+  
+  // Performance
+  "reposense.performance.trackingEnabled": true,
+  "reposense.performance.incrementalAnalysis": true,
+  "reposense.performance.cacheTTL": 300000,
+  
+  // Telemetry (Optional)
+  "reposense.telemetry.enabled": false
+}
+```
+
+### Supported Languages
+
+| **Frontend** | **Backend** | **Test Frameworks** |
+|--------------|-------------|---------------------|
+| TypeScript   | Node.js     | Playwright          |
+| JavaScript   | Express     | Cypress             |
+| React (TSX)  | Fastify     | Jest                |
+| Vue          | NestJS      | Mocha               |
+| Angular      | Python      | Vitest              |
+
+---
+
+## 📖 Documentation
+
+- [Getting Started (5-Minute Walkthrough)](docs/getting-started.md)
+- [AI Chat Assistant Guide](docs/ai-chat-guide.md) ⭐ **NEW**
+- [Gap Detection Guide](docs/gap-detection.md)
+- [Test Generation Guide](docs/test-generation.md)
+- [Remediation Guide](docs/remediation.md)
+- [Settings Reference](docs/settings.md)
+- [Troubleshooting](docs/troubleshooting.md)
+
+---
+
+## 🏗️ Architecture
+
+RepoSense uses a multi-layered architecture:
+
+```
+┌─────────────────────────────────────────┐
+│         VS Code Extension Host          │
+├─────────────────────────────────────────┤
+│  UI Layer (TreeView, CodeLens, WebView) │
+├─────────────────────────────────────────┤
+│  Language Server Protocol (LSP)         │
+├─────────────────────────────────────────┤
+│  Core Analysis Engine                   │
+│  ├─ AST Parsing (Tree-sitter)          │
+│  ├─ Gap Detection                       │
+│  └─ Test Coverage Analysis             │
+├─────────────────────────────────────────┤
+│  Intelligence Layer                     │
+│  ├─ Ollama Service (Local LLM)         │
+│  ├─ Test Generator                      │
+│  ├─ Remediation Engine                  │
+│  └─ Report Generator                    │
+├─────────────────────────────────────────┤
+│  Utilities & Infrastructure             │
+│  ├─ Performance Monitor                 │
+│  ├─ Incremental Analyzer                │
+│  ├─ Error Handler                       │
+│  └─ Batch Processor                     │
+└─────────────────────────────────────────┘
+```
+
+---
+
+## 🧪 Testing
+
+RepoSense has comprehensive test coverage:
+
+```bash
+# Run all tests
+npm test
+
+# Run unit tests only
+npm run test:unit
+
+# Generate coverage report
+npm run coverage
+npm run coverage:report
+```
+
+### Test Suite
+- **90+ Unit Tests** (Mocha + Chai + Sinon)
+- **6 Integration Tests** (Complete workflows)
+- **3 E2E Test Projects** (Sample apps with known gaps)
+- **Code Coverage**: 80%+ line coverage, 85%+ function coverage
+
+### Performance Targets
+- ✅ Extension activation: < 500ms
+- ✅ Scan 50K LOC: < 30 seconds
+- ✅ Memory usage: < 200MB
+- ✅ Incremental analysis cache: 60%+ hit rate
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+### Development Setup
+
+```bash
+# Clone repository
+git clone https://github.com/Data-Scientist-MSL/RepoSense.git
+cd RepoSense
+
+# Install dependencies
+npm install
+
+# Compile TypeScript
+npm run compile
+
+# Run tests
+npm test
+
+# Watch mode (auto-compile)
+npm run watch
+
+# Open in VS Code
+code .
+```
+
+### Development Workflow
+1. Create feature branch: `git checkout -b feature/your-feature`
+2. Make changes and add tests
+3. Run tests: `npm test`
+4. Commit: `git commit -m "feat: your feature"`
+5. Push: `git push origin feature/your-feature`
+6. Create Pull Request
+
+---
+
+## 📝 Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for release history.
+
+### Latest Release: v1.0.0 (January 2026)
+- ✨ Initial marketplace release
+- 🔍 Frontend-Backend gap detection
+- 🤖 AI-powered test generation with Ollama + DeepSeek
+- ✅ Automated remediation engine
+- 📊 Executive report generation
+- ⚡ Performance optimization with caching
+- 🛡️ Comprehensive error handling
+- 🧪 90+ unit tests with 80%+ coverage
+
+---
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- **[Ollama](https://ollama.ai)** - Local LLM runtime
+- **[DeepSeek](https://www.deepseek.com/)** - DeepSeek-Coder-V2 model
+- **[Tree-sitter](https://tree-sitter.github.io/)** - Incremental parsing
+- **[VS Code API](https://code.visualstudio.com/api)** - Extension framework
+
+---
+
+## 🐛 Issues & Support
+
+- **Bug Reports**: [GitHub Issues](https://github.com/Data-Scientist-MSL/RepoSense/issues)
+- **Feature Requests**: [GitHub Discussions](https://github.com/Data-Scientist-MSL/RepoSense/discussions)
+- **Questions**: [Stack Overflow](https://stackoverflow.com/questions/tagged/reposense) (tag: `reposense`)
+
+---
+
+## 🌟 Show Your Support
+
+If you find RepoSense helpful, please:
+- ⭐ **Star** the [GitHub repository](https://github.com/Data-Scientist-MSL/RepoSense)
+- 📝 **Write a review** on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=reposense.reposense)
+- 🐦 **Share** on social media
+- 💬 **Join** our community discussions
+
+---
+
+## 📊 Stats
+
+- **Total Lines of Code**: 15,000+
+- **Test Coverage**: 80%+
+- **Supported Languages**: 8+
+- **Total Tests**: 90+
+- **Performance**: <30s for 50K LOC
+
+---
+
+**Made with ❤️ by the RepoSense Team**
+
+🚀 **Start analyzing your codebase today!**

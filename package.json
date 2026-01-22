@@ -1,0 +1,395 @@
+{
+  "name": "reposense",
+  "displayName": "RepoSense - AI Code Analyzer & UAT Assistant",
+  "description": "Intelligent frontend-backend gap detection, automated test generation, and one-click remediation. Zero-cost AI powered by local LLM.",
+  "version": "1.0.0",
+  "publisher": "reposense",
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Testing",
+    "Linters",
+    "Other"
+  ],
+  "keywords": [
+    "analysis",
+    "testing",
+    "UAT",
+    "AI",
+    "frontend",
+    "backend",
+    "gap-detection",
+    "code-quality",
+    "automation",
+    "ollama",
+    "deepseek",
+    "playwright",
+    "cypress",
+    "test-generation"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Data-Scientist-MSL/RepoSense.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Data-Scientist-MSL/RepoSense/issues"
+  },
+  "homepage": "https://github.com/Data-Scientist-MSL/RepoSense#readme",
+  "license": "MIT",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "enabledApiProposals": [],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "reposense",
+          "title": "RepoSense",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "reposense": [
+        {
+          "id": "reposense.gapAnalysis",
+          "name": "Gap Analysis"
+        },
+        {
+          "id": "reposense.testCases",
+          "name": "Generated Tests"
+        },
+        {
+          "id": "reposense.remediation",
+          "name": "Remediation Suggestions"
+        },
+        {
+          "id": "reposense.coverage",
+          "name": "Coverage Report"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "reposense.scanRepository",
+        "title": "RepoSense: Scan Repository",
+        "icon": "$(search)"
+      },
+      {
+        "command": "reposense.generateTests",
+        "title": "RepoSense: Generate UAT Tests",
+        "icon": "$(testing-run-icon)"
+      },
+      {
+        "command": "reposense.showReport",
+        "title": "RepoSense: Show Detailed Report",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "reposense.fixGap",
+        "title": "RepoSense: Fix This Gap",
+        "icon": "$(wrench)"
+      },
+      {
+        "command": "reposense.changeGrouping",
+        "title": "Change Grouping",
+        "icon": "$(group-by-ref-type)"
+      },
+      {
+        "command": "reposense.openInEditor",
+        "title": "Open in Editor",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "reposense.applyAutoFix",
+        "title": "Apply Auto-Fix",
+        "icon": "$(lightbulb-autofix)"
+      },
+      {
+        "command": "reposense.runTest",
+        "title": "Run This Test",
+        "icon": "$(play)"
+      },
+      {
+        "command": "reposense.copyGapDetails",
+        "title": "Copy Gap Details",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "reposense.analyzeCodeWithAI",
+        "title": "RepoSense: Analyze Code with AI",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "reposense.generateReport",
+        "title": "RepoSense: Generate Executive Report",
+        "icon": "$(file-text)"
+      },
+      {
+        "command": "reposense.configureOllama",
+        "title": "RepoSense: Configure Ollama",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "reposense.showPerformanceReport",
+        "title": "RepoSense: Show Performance Report",
+        "icon": "$(dashboard)"
+      },
+      {
+        "command": "reposense.openAIChat",
+        "title": "RepoSense: Open AI Assistant Chat",
+        "icon": "$(comment-discussion)"
+      },
+      {
+        "command": "reposense.generateArchitectureDiagrams",
+        "title": "RepoSense: Generate Architecture Diagrams",
+        "icon": "$(symbol-structure)"
+      },
+      {
+        "command": "reposense.generateTestPreview",
+        "title": "RepoSense: Generate Test Preview",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "reposense.openTestPreview",
+        "title": "RepoSense: Open Test Preview",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "reposense.exportReviewBundle",
+        "title": "RepoSense: Export Review Bundle",
+        "icon": "$(export)"
+      },
+      {
+        "command": "reposense.compareRuns",
+        "title": "RepoSense: Compare Runs",
+        "icon": "$(diff)"
+      },
+      {
+        "command": "reposense.applyTestPreview",
+        "title": "RepoSense: Apply Test Preview",
+        "icon": "$(check)"
+      },
+      {
+        "command": "reposense.rollbackApply",
+        "title": "RepoSense: Rollback Last Apply",
+        "icon": "$(undo)"
+      },
+      {
+        "command": "reposense.executeGeneratedTests",
+        "title": "RepoSense: Execute Generated Tests",
+        "icon": "$(run)"
+      },
+      {
+        "command": "reposense.viewExecutionEvidence",
+        "title": "RepoSense: View Execution Evidence",
+        "icon": "$(file-text)"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "reposense.scanRepository",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "reposense.changeGrouping",
+          "when": "false"
+        },
+        {
+          "command": "reposense.openInEditor",
+          "when": "false"
+        },
+        {
+          "command": "reposense.applyAutoFix",
+          "when": "false"
+        },
+        {
+          "command": "reposense.runTest",
+          "when": "false"
+        },
+        {
+          "command": "reposense.copyGapDetails",
+          "when": "false"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "reposense.scanRepository",
+          "when": "view == reposense.gapAnalysis",
+          "group": "navigation"
+        },
+        {
+          "command": "reposense.changeGrouping",
+          "when": "view == reposense.gapAnalysis",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "reposense.fixGap",
+          "when": "view == reposense.gapAnalysis && viewItem == gap",
+          "group": "inline"
+        },
+        {
+          "command": "reposense.openInEditor",
+          "when": "view == reposense.gapAnalysis && viewItem == gap",
+          "group": "navigation@1"
+        },
+        {
+          "command": "reposense.copyGapDetails",
+          "when": "view == reposense.gapAnalysis && viewItem == gap",
+          "group": "actions@1"
+        },
+        {
+          "command": "reposense.applyAutoFix",
+          "when": "view == reposense.remediation && viewItem == remediation",
+          "group": "inline"
+        },
+        {
+          "command": "reposense.openInEditor",
+          "when": "view == reposense.remediation && viewItem == remediation",
+          "group": "navigation@1"
+        },
+        {
+          "command": "reposense.runTest",
+          "when": "view == reposense.testCases && viewItem == test-case",
+          "group": "inline"
+        },
+        {
+          "command": "reposense.openInEditor",
+          "when": "view == reposense.testCases && viewItem == test-case",
+          "group": "navigation@1"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "RepoSense",
+      "properties": {
+        "reposense.scanOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically scan repository on file save"
+        },
+        "reposense.llmModel": {
+          "type": "string",
+          "enum": [
+            "deepseek-coder:6.7b",
+            "deepseek-coder:33b",
+            "codellama:13b",
+            "qwen2.5-coder:7b"
+          ],
+          "default": "deepseek-coder:6.7b",
+          "description": "Local LLM model for intelligent analysis"
+        },
+        "reposense.ollamaEndpoint": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "Ollama API endpoint URL"
+        },
+        "reposense.autoApplyRemediations": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically apply AI-generated remediations without preview"
+        },
+        "reposense.testFramework": {
+          "type": "string",
+          "enum": [
+            "playwright",
+            "cypress",
+            "auto"
+          ],
+          "default": "auto",
+          "description": "Preferred E2E testing framework for generated tests"
+        },
+        "reposense.telemetry.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable anonymous error telemetry to help improve RepoSense (requires restart)"
+        },
+        "reposense.excludePatterns": {
+          "type": "array",
+          "default": [
+            "**/node_modules/**",
+            "**/dist/**",
+            "**/build/**"
+          ],
+          "description": "Glob patterns to exclude from analysis"
+        },
+        "reposense.maxConcurrentAnalysis": {
+          "type": "number",
+          "default": 4,
+          "description": "Maximum concurrent file analysis operations"
+        },
+        "reposense.performance.trackingEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable performance tracking and monitoring"
+        },
+        "reposense.performance.incrementalAnalysis": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable incremental analysis to skip unchanged files"
+        },
+        "reposense.performance.cacheTTL": {
+          "type": "number",
+          "default": 300000,
+          "description": "Cache TTL in milliseconds for analysis results (default: 5 minutes)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "test:unit": "mocha --require ts-node/register 'src/test/suite/**/*.test.ts'",
+    "coverage": "c8 npm test",
+    "coverage:report": "c8 report --reporter=html --reporter=text"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/chai": "^5.2.3",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.0.0",
+    "@types/sinon": "^21.0.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vscode/test-cli": "^0.0.4",
+    "@vscode/test-electron": "^2.3.8",
+    "c8": "^10.1.3",
+    "chai": "^6.2.2",
+    "eslint": "^8.50.0",
+    "mocha": "^11.7.5",
+    "sinon": "^21.0.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "glob": "^10.5.0",
+    "uuid": "^13.0.0",
+    "vscode-languageclient": "^9.0.1",
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-textdocument": "^1.0.12"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^9.2.2",
+    "tree-sitter": "^0.20.4",
+    "tree-sitter-javascript": "^0.20.3",
+    "tree-sitter-python": "^0.20.4",
+    "tree-sitter-typescript": "^0.20.5"
+  }
+}
