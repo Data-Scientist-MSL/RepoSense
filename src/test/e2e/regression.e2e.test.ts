@@ -1,4 +1,4 @@
-/**
+﻿/**
  * End-to-End Regression Test Suite
  * 
  * Comprehensive regression testing covering all critical paths:
@@ -16,7 +16,7 @@
  * These tests ensure all functionality works end-to-end after code changes.
  */
 
-import * as assert from 'assert';
+import assert from 'assert';
 import * as path from 'path';
 import * as fs from 'fs';
 import { execSync } from 'child_process';

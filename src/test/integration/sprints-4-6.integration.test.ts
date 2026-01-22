@@ -1,10 +1,10 @@
-/**
+﻿/**
  * Sprints 4-6 Integration Tests
  * DiagramGenerator, EvidenceService, ChatBotService
  * Tests for deterministic diagrams, evidence collection, and ChatBot assistant
  */
 
-import * as assert from 'assert';
+import assert from 'assert';
 import { suite, test } from 'mocha';
 import { DiagramGenerator, DiagramType } from '../../services/DiagramGeneratorNew';
 import { EvidenceService, ArtifactType } from '../../services/EvidenceServiceNew';
@@ -312,7 +312,7 @@ suite('Sprint 6: ChatBotService', () => {
 });
 
 suite('End-to-End: Sprints 4-6 Complete Flow', () => {
-  test('should orchestrate diagrams → evidence → chat workflow', () => {
+  test('should orchestrate diagrams â†’ evidence â†’ chat workflow', () => {
     // Sprint 4: Generate diagrams
     const generator = new DiagramGenerator('run-e2e', sampleGraph);
     const diagrams = generator.generateAll();
@@ -354,6 +354,6 @@ suite('End-to-End: Sprints 4-6 Complete Flow', () => {
     const finalHistory = chatbot.getHistory();
     assert(finalHistory.entries.length >= 4);
 
-    console.log('✅ E2E Test Complete: Diagrams → Evidence → ChatBot');
+    console.log('âœ… E2E Test Complete: Diagrams â†’ Evidence â†’ ChatBot');
   });
 });

@@ -1,16 +1,16 @@
-/**
+﻿/**
  * sprint-13.verification.test.ts (Sprint 13 - Test Stubs)
  * 
  * Sprint 13 Test Suite (T1-T5)
  * Tests verify:
  * - T1: No-mutation guarantee (previews don't modify /src)
  * - T2: Chat integrity (chat commands don't have side effects)
- * - T3: Evidence chain (Gap→Preview→Evidence links correct)
+ * - T3: Evidence chain (Gapâ†’Previewâ†’Evidence links correct)
  * - T4: Delta accuracy (deltas calculated correctly)
  * - T5: Export integrity (exports include all artifacts)
  */
 
-import * as assert from 'assert';
+import assert from 'assert';
 
 /**
  * T1: No-Mutation Guarantee
@@ -44,9 +44,9 @@ export const testNoMutationGuarantee = async () => {
       assert(!previewLocation.includes(path), `Preview must not affect ${path}`);
     }
 
-    console.log(`✓ ${testName}: PASSED - No mutations to /src`);
+    console.log(`âœ“ ${testName}: PASSED - No mutations to /src`);
   } catch (error) {
-    console.error(`✗ ${testName}: FAILED - ${error}`);
+    console.error(`âœ— ${testName}: FAILED - ${error}`);
     throw error;
   }
 };
@@ -96,9 +96,9 @@ export const testChatIntegrity = async () => {
 
     assert.strictEqual(chatSession.workspaceState, 'unchanged', 'Chat must not modify workspace');
 
-    console.log(`✓ ${testName}: PASSED - Chat integrity verified`);
+    console.log(`âœ“ ${testName}: PASSED - Chat integrity verified`);
   } catch (error) {
-    console.error(`✗ ${testName}: FAILED - ${error}`);
+    console.error(`âœ— ${testName}: FAILED - ${error}`);
     throw error;
   }
 };
@@ -107,8 +107,8 @@ export const testChatIntegrity = async () => {
  * T3: Evidence Chain
  * 
  * Verify that:
- * - Gap → Preview link is recorded
- * - Preview → Evidence link is recorded
+ * - Gap â†’ Preview link is recorded
+ * - Preview â†’ Evidence link is recorded
  * - Evidence index is updated correctly
  * - Audit trail is complete
  */
@@ -176,9 +176,9 @@ export const testEvidenceChain = async () => {
 
     assert(chain.gapId && chain.previewId && chain.runId, 'All chain elements must exist');
 
-    console.log(`✓ ${testName}: PASSED - Evidence chain complete`);
+    console.log(`âœ“ ${testName}: PASSED - Evidence chain complete`);
   } catch (error) {
-    console.error(`✗ ${testName}: FAILED - ${error}`);
+    console.error(`âœ— ${testName}: FAILED - ${error}`);
     throw error;
   }
 };
@@ -230,14 +230,14 @@ export const testDeltaAccuracy = async () => {
 
     // Format trends
     const trends = {
-      tests: delta.tests > 0 ? `↑ +${delta.tests}` : `↓ ${delta.tests}`,
-      gaps: delta.gaps < 0 ? `↓ ${Math.abs(delta.gaps)}` : `↑ +${delta.gaps}`,
-      coverage: delta.coverage > 0 ? `↑ +${delta.coverage}%` : `↓ ${delta.coverage}%`
+      tests: delta.tests > 0 ? `â†‘ +${delta.tests}` : `â†“ ${delta.tests}`,
+      gaps: delta.gaps < 0 ? `â†“ ${Math.abs(delta.gaps)}` : `â†‘ +${delta.gaps}`,
+      coverage: delta.coverage > 0 ? `â†‘ +${delta.coverage}%` : `â†“ ${delta.coverage}%`
     };
 
-    assert.strictEqual(trends.tests, '↑ +5', 'Tests trend formatting incorrect');
-    assert.strictEqual(trends.gaps, '↓ 3', 'Gaps trend formatting incorrect');
-    assert.strictEqual(trends.coverage, '↑ +5%', 'Coverage trend formatting incorrect');
+    assert.strictEqual(trends.tests, 'â†‘ +5', 'Tests trend formatting incorrect');
+    assert.strictEqual(trends.gaps, 'â†“ 3', 'Gaps trend formatting incorrect');
+    assert.strictEqual(trends.coverage, 'â†‘ +5%', 'Coverage trend formatting incorrect');
 
     // Verify no recalculation (would read from stored delta.json)
     const storedDelta = {
@@ -248,9 +248,9 @@ export const testDeltaAccuracy = async () => {
 
     assert(!storedDelta.calculated, 'Delta must be read, not recalculated');
 
-    console.log(`✓ ${testName}: PASSED - Delta accuracy verified`);
+    console.log(`âœ“ ${testName}: PASSED - Delta accuracy verified`);
   } catch (error) {
-    console.error(`✗ ${testName}: FAILED - ${error}`);
+    console.error(`âœ— ${testName}: FAILED - ${error}`);
     throw error;
   }
 };
@@ -320,9 +320,9 @@ export const testExportIntegrity = async () => {
     assert(archive.valid, 'Archive must be valid');
     assert(archive.files.length > 0, 'Archive must have files');
 
-    console.log(`✓ ${testName}: PASSED - Export integrity verified`);
+    console.log(`âœ“ ${testName}: PASSED - Export integrity verified`);
   } catch (error) {
-    console.error(`✗ ${testName}: FAILED - ${error}`);
+    console.error(`âœ— ${testName}: FAILED - ${error}`);
     throw error;
   }
 };
@@ -331,9 +331,9 @@ export const testExportIntegrity = async () => {
  * Sprint 13 Test Suite Runner
  */
 export const runSprintTests = async () => {
-  console.log('\n╔══════════════════════════════════════════════════════════╗');
-  console.log('║        SPRINT 13 VERIFICATION TEST SUITE (T1-T5)         ║');
-  console.log('╚══════════════════════════════════════════════════════════╝\n');
+  console.log('\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
+  console.log('â•‘        SPRINT 13 VERIFICATION TEST SUITE (T1-T5)         â•‘');
+  console.log('â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
 
   const tests = [
     { name: 'T1: No-Mutation Guarantee', fn: testNoMutationGuarantee },
@@ -355,12 +355,12 @@ export const runSprintTests = async () => {
     }
   }
 
-  console.log('\n╔══════════════════════════════════════════════════════════╗');
-  console.log('║                      TEST RESULTS                        ║');
-  console.log('╚══════════════════════════════════════════════════════════╝\n');
+  console.log('\nâ•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—');
+  console.log('â•‘                      TEST RESULTS                        â•‘');
+  console.log('â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n');
   console.log(`  Total:   ${tests.length}`);
-  console.log(`  Passed:  ${passed} ✓`);
-  console.log(`  Failed:  ${failed} ✗\n`);
+  console.log(`  Passed:  ${passed} âœ“`);
+  console.log(`  Failed:  ${failed} âœ—\n`);
 
   return { passed, failed, total: tests.length };
 };
