@@ -166,13 +166,13 @@ export interface GraphMetadata {
     totalEndpoints: number;
     usedEndpoints: number;
     unusedEndpoints: number;
-    untested Endpoints: number;
+    untestedEndpoints: number;
     totalTests: number;
     totalGaps: number;
     
     // Coverage
     endpointCoveragePercent: number;
-    lines OfCodeAnalyzed: number;
+    linesOfCodeAnalyzed: number;
   };
   
   // Source info
