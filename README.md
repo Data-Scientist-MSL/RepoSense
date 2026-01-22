@@ -1,24 +1,23 @@
-# RepoSense - Intelligent Repository Analyzer & UAT Assistant
+﻿# RepoSense - Intelligent Repository Analyzer & UAT Assistant
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://marketplace.visualstudio.com/items?itemName=reposense.reposense)
-[![License](https://img.shields.io/badge/license-AGPL%203.0-green.svg)](AGPL_LICENSE.txt)
-[![Open Source](https://img.shields.io/badge/open%20source-AGPL%203.0-brightgreen.svg)](https://github.com/Data-Scientist-MSL/RepoSense)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Build Status](https://github.com/Data-Scientist-MSL/RepoSense/workflows/CI/badge.svg)](https://github.com/Data-Scientist-MSL/RepoSense/actions)
 [![Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen.svg)](https://github.com/Data-Scientist-MSL/RepoSense)
 
-**RepoSense** is the first VS Code extension that intelligently bridges your frontend and backend code, automatically detecting integration gaps and generating comprehensive test coverage—all powered by local AI at **zero cost**.
+**RepoSense** is the first VS Code extension that intelligently bridges your frontend and backend code, automatically detecting integration gaps and generating comprehensive test coverageâ€”all powered by local AI at **zero cost**.
 
 ---
 
-## 🚀 Features
+## ðŸš€ Features
 
-### 🔍 **Intelligent Gap Detection**
+### ðŸ” **Intelligent Gap Detection**
 - **Frontend-Backend Analysis**: Automatically detects API calls in frontend code and matches them with backend endpoints
 - **Missing Endpoint Detection**: Identifies frontend calls to non-existent backend endpoints (critical gaps)
 - **Untested Endpoint Detection**: Finds backend endpoints without test coverage (high-priority gaps)
 - **Multi-Framework Support**: Works with React, Vue, Angular, Express, Fastify, NestJS, and more
 
-### 🤖 **AI-Powered Analysis (100% Local)**
+### ðŸ¤– **AI-Powered Analysis (100% Local)**
 - **Zero-Cost AI**: Powered by [Ollama](https://ollama.ai) running locally - no API keys, no subscriptions
 - **DeepSeek-Coder-V2**: Uses state-of-the-art code-specific LLM for accurate analysis
 - **Interactive AI Chat**: Get conversational guidance on fixing gaps with context-aware recommendations
@@ -27,7 +26,7 @@
 - **Executive Reports**: Creates comprehensive markdown/HTML reports with metrics
 - **Architecture Diagrams**: Auto-generate L1/L2/L3 architecture diagrams showing defects and improvements
 
-### 📊 **Architecture Visualization**
+### ðŸ“Š **Architecture Visualization**
 - **Multi-Level Diagrams**: Generate L1 (high-level), L2 (component), and L3 (technical) architecture views
 - **As-Is vs To-Be**: Visualize current architecture with defects and proposed improvements
 - **Mermaid Format**: Diagrams render in VS Code, GitHub, and can be exported to PNG/SVG
@@ -35,13 +34,13 @@
 - **Side-by-Side Comparison**: See before/after architecture with detailed difference tracking
 - **Report Integration**: Include architecture diagrams in executive reports
 
-### ✅ **Automated UAT & Testing**
+### âœ… **Automated UAT & Testing**
 - **One-Click Test Generation**: Generate complete test suites for untested endpoints
 - **Multiple Test Frameworks**: Supports Playwright, Cypress, Jest, Mocha
 - **Backend Endpoint Scaffolding**: Auto-generate missing backend endpoints
 - **Test Coverage Analysis**: Visualize coverage gaps in real-time
 
-### 🎨 **Professional UI/UX**
+### ðŸŽ¨ **Professional UI/UX**
 - **TreeView Integration**: Browse gaps by severity, type, or file
 - **CodeLens Annotations**: See gaps inline in your code
 - **Quick Fixes**: Apply AI-generated fixes with one click
@@ -51,7 +50,7 @@
 
 ---
 
-## 📦 Installation
+## ðŸ“¦ Installation
 
 ### Prerequisites
 1. **VS Code** 1.85.0 or higher
@@ -80,9 +79,9 @@ code --install-extension reposense-1.0.0.vsix
 
 ---
 
-## 🎯 Quick Start
+## ðŸŽ¯ Quick Start
 
-### 1️⃣ **Scan Your Repository**
+### 1ï¸âƒ£ **Scan Your Repository**
 ```bash
 # Command Palette (Ctrl+Shift+P / Cmd+Shift+P)
 > RepoSense: Scan Repository
@@ -93,13 +92,13 @@ RepoSense will analyze your frontend and backend code to detect:
 - Untested backend endpoints
 - Frontend-backend mismatches
 
-### 2️⃣ **View Gaps**
+### 2ï¸âƒ£ **View Gaps**
 Gaps appear in:
-- **Activity Bar** → RepoSense TreeView
-- **Problems Panel** → Diagnostics
-- **Editor** → CodeLens annotations
+- **Activity Bar** â†’ RepoSense TreeView
+- **Problems Panel** â†’ Diagnostics
+- **Editor** â†’ CodeLens annotations
 
-### 3️⃣ **Generate Tests (AI)**
+### 3ï¸âƒ£ **Generate Tests (AI)**
 ```bash
 # Right-click a gap or use Command Palette
 > RepoSense: Generate Tests
@@ -120,7 +119,7 @@ test('POST /api/users should create user', async ({ request }) => {
 });
 ```
 
-### 4️⃣ **Chat with AI Assistant**
+### 4ï¸âƒ£ **Chat with AI Assistant**
 ```bash
 # Get interactive help with your gaps
 > RepoSense: Open AI Assistant Chat
@@ -139,13 +138,13 @@ The AI assistant provides:
 
 See the [AI Chat Guide](docs/ai-chat-guide.md) for detailed usage.
 
-### 5️⃣ **Apply Quick Fixes**
+### 5ï¸âƒ£ **Apply Quick Fixes**
 Click **Quick Fix** on a gap to:
 - Generate missing backend endpoint
 - Add test coverage
 - Fix frontend API call
 
-### 5️⃣ **Generate Architecture Diagrams**
+### 5ï¸âƒ£ **Generate Architecture Diagrams**
 ```bash
 > RepoSense: Generate Architecture Diagrams
 ```
@@ -159,7 +158,7 @@ Visualize your architecture with AI-generated diagrams:
 
 See [Architecture Diagrams Documentation](docs/ARCHITECTURE_DIAGRAMS.md) for details.
 
-### 6️⃣ **Generate Executive Report**
+### 6ï¸âƒ£ **Generate Executive Report**
 ```bash
 > RepoSense: Generate Executive Report
 ```
@@ -174,7 +173,7 @@ Get a comprehensive report with:
 
 ---
 
-## ⚙️ Configuration
+## âš™ï¸ Configuration
 
 ### Extension Settings
 
@@ -219,10 +218,10 @@ Open Settings (`Ctrl+,` / `Cmd+,`) and search for "RepoSense":
 
 ---
 
-## 📖 Documentation
+## ðŸ“– Documentation
 
 - [Getting Started (5-Minute Walkthrough)](docs/getting-started.md)
-- [AI Chat Assistant Guide](docs/ai-chat-guide.md) ⭐ **NEW**
+- [AI Chat Assistant Guide](docs/ai-chat-guide.md) â­ **NEW**
 - [Gap Detection Guide](docs/gap-detection.md)
 - [Test Generation Guide](docs/test-generation.md)
 - [Remediation Guide](docs/remediation.md)
@@ -231,40 +230,40 @@ Open Settings (`Ctrl+,` / `Cmd+,`) and search for "RepoSense":
 
 ---
 
-## 🏗️ Architecture
+## ðŸ—ï¸ Architecture
 
 RepoSense uses a multi-layered architecture:
 
 ```
-┌─────────────────────────────────────────┐
-│         VS Code Extension Host          │
-├─────────────────────────────────────────┤
-│  UI Layer (TreeView, CodeLens, WebView) │
-├─────────────────────────────────────────┤
-│  Language Server Protocol (LSP)         │
-├─────────────────────────────────────────┤
-│  Core Analysis Engine                   │
-│  ├─ AST Parsing (Tree-sitter)          │
-│  ├─ Gap Detection                       │
-│  └─ Test Coverage Analysis             │
-├─────────────────────────────────────────┤
-│  Intelligence Layer                     │
-│  ├─ Ollama Service (Local LLM)         │
-│  ├─ Test Generator                      │
-│  ├─ Remediation Engine                  │
-│  └─ Report Generator                    │
-├─────────────────────────────────────────┤
-│  Utilities & Infrastructure             │
-│  ├─ Performance Monitor                 │
-│  ├─ Incremental Analyzer                │
-│  ├─ Error Handler                       │
-│  └─ Batch Processor                     │
-└─────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚         VS Code Extension Host          â”‚
+â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+â”‚  UI Layer (TreeView, CodeLens, WebView) â”‚
+â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+â”‚  Language Server Protocol (LSP)         â”‚
+â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+â”‚  Core Analysis Engine                   â”‚
+â”‚  â”œâ”€ AST Parsing (Tree-sitter)          â”‚
+â”‚  â”œâ”€ Gap Detection                       â”‚
+â”‚  â””â”€ Test Coverage Analysis             â”‚
+â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+â”‚  Intelligence Layer                     â”‚
+â”‚  â”œâ”€ Ollama Service (Local LLM)         â”‚
+â”‚  â”œâ”€ Test Generator                      â”‚
+â”‚  â”œâ”€ Remediation Engine                  â”‚
+â”‚  â””â”€ Report Generator                    â”‚
+â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+â”‚  Utilities & Infrastructure             â”‚
+â”‚  â”œâ”€ Performance Monitor                 â”‚
+â”‚  â”œâ”€ Incremental Analyzer                â”‚
+â”‚  â”œâ”€ Error Handler                       â”‚
+â”‚  â””â”€ Batch Processor                     â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ---
 
-## 🧪 Testing
+## ðŸ§ª Testing
 
 RepoSense has comprehensive test coverage:
 
@@ -287,14 +286,14 @@ npm run coverage:report
 - **Code Coverage**: 80%+ line coverage, 85%+ function coverage
 
 ### Performance Targets
-- ✅ Extension activation: < 500ms
-- ✅ Scan 50K LOC: < 30 seconds
-- ✅ Memory usage: < 200MB
-- ✅ Incremental analysis cache: 60%+ hit rate
+- âœ… Extension activation: < 500ms
+- âœ… Scan 50K LOC: < 30 seconds
+- âœ… Memory usage: < 200MB
+- âœ… Incremental analysis cache: 60%+ hit rate
 
 ---
 
-## 🤝 Contributing
+## ðŸ¤ Contributing
 
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
@@ -331,47 +330,29 @@ code .
 
 ---
 
-## 📝 Changelog
+## ðŸ“ Changelog
 
 See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ### Latest Release: v1.0.0 (January 2026)
-- ✨ Initial marketplace release
-- 🔍 Frontend-Backend gap detection
-- 🤖 AI-powered test generation with Ollama + DeepSeek
-- ✅ Automated remediation engine
-- 📊 Executive report generation
-- ⚡ Performance optimization with caching
-- 🛡️ Comprehensive error handling
-- 🧪 90+ unit tests with 80%+ coverage
+- âœ¨ Initial marketplace release
+- ðŸ” Frontend-Backend gap detection
+- ðŸ¤– AI-powered test generation with Ollama + DeepSeek
+- âœ… Automated remediation engine
+- ðŸ“Š Executive report generation
+- âš¡ Performance optimization with caching
+- ðŸ›¡ï¸ Comprehensive error handling
+- ðŸ§ª 90+ unit tests with 80%+ coverage
 
 ---
 
-## 📄 License
+## ðŸ“„ License
 
-**GNU Affero General Public License v3.0** - see [AGPL_LICENSE.txt](AGPL_LICENSE.txt) for full details.
-
-RepoSense is committed to the open source community. The AGPL-3.0 license ensures:
-- ✅ All improvements benefit the community
-- ✅ No closed-source forks
-- ✅ Fair contribution model
-
-**Commercial licensing available** for enterprises. Contact: licensing@reposense.io
+GNU Affero General Public License v3.0 - see [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🌐 Open Source
-
-RepoSense is **100% open source** and welcomes community contributions!
-
-- **Repository**: [github.com/Data-Scientist-MSL/RepoSense](https://github.com/Data-Scientist-MSL/RepoSense)
-- **Contributing Guide**: [CONTRIBUTING.md](CONTRIBUTING.md)
-- **Community Discord**: [Join our community](https://discord.gg/reposense)
-- **Feature Brochure**: [BROCHURE.md](BROCHURE.md)
-
----
-
-## 🙏 Acknowledgments
+## ðŸ™ Acknowledgments
 
 - **[Ollama](https://ollama.ai)** - Local LLM runtime
 - **[DeepSeek](https://www.deepseek.com/)** - DeepSeek-Coder-V2 model
@@ -380,7 +361,7 @@ RepoSense is **100% open source** and welcomes community contributions!
 
 ---
 
-## 🐛 Issues & Support
+## ðŸ› Issues & Support
 
 - **Bug Reports**: [GitHub Issues](https://github.com/Data-Scientist-MSL/RepoSense/issues)
 - **Feature Requests**: [GitHub Discussions](https://github.com/Data-Scientist-MSL/RepoSense/discussions)
@@ -388,17 +369,17 @@ RepoSense is **100% open source** and welcomes community contributions!
 
 ---
 
-## 🌟 Show Your Support
+## ðŸŒŸ Show Your Support
 
 If you find RepoSense helpful, please:
-- ⭐ **Star** the [GitHub repository](https://github.com/Data-Scientist-MSL/RepoSense)
-- 📝 **Write a review** on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=reposense.reposense)
-- 🐦 **Share** on social media
-- 💬 **Join** our community discussions
+- â­ **Star** the [GitHub repository](https://github.com/Data-Scientist-MSL/RepoSense)
+- ðŸ“ **Write a review** on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=reposense.reposense)
+- ðŸ¦ **Share** on social media
+- ðŸ’¬ **Join** our community discussions
 
 ---
 
-## 📊 Stats
+## ðŸ“Š Stats
 
 - **Total Lines of Code**: 15,000+
 - **Test Coverage**: 80%+
@@ -408,6 +389,6 @@ If you find RepoSense helpful, please:
 
 ---
 
-**Made with ❤️ by the RepoSense Team**
+**Made with â¤ï¸ by the RepoSense Team**
 
-🚀 **Start analyzing your codebase today!**
+ðŸš€ **Start analyzing your codebase today!**

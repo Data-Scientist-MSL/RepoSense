@@ -1,0 +1,42 @@
+# RepoSense CODEOWNERS
+# Automatic reviewer assignment for pull requests
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Core Architecture & Analysis Engines
+/src/core/                    @Data-Scientist-MSL/maintainers
+/src/services/analysis/       @Data-Scientist-MSL/maintainers
+/src/providers/               @Data-Scientist-MSL/maintainers
+
+# LLM & AI Features
+/src/services/llm/            @Data-Scientist-MSL/ai-team
+/src/services/llm/OllamaService.ts  @Data-Scientist-MSL/ai-team @Data-Scientist-MSL/maintainers
+
+# Compliance & Security
+/src/services/compliance/     @Data-Scientist-MSL/compliance-team
+AGPL_LICENSE.txt              @Data-Scientist-MSL/maintainers
+LICENSE                       @Data-Scientist-MSL/maintainers
+
+# CLI & DevOps
+/src/cli/                     @Data-Scientist-MSL/maintainers
+/.github/workflows/           @Data-Scientist-MSL/maintainers @Data-Scientist-MSL/devops-team
+/Jenkinsfile                  @Data-Scientist-MSL/devops-team
+/.gitlab-ci.yml               @Data-Scientist-MSL/devops-team
+
+# Testing
+/src/test/                    @Data-Scientist-MSL/qa-team
+/src/test/e2e/                @Data-Scientist-MSL/qa-team @Data-Scientist-MSL/maintainers
+
+# Documentation
+/docs/                        @Data-Scientist-MSL/maintainers
+/BROCHURE.md                  @Data-Scientist-MSL/maintainers
+/README.md                    @Data-Scientist-MSL/maintainers
+/CONTRIBUTING.md              @Data-Scientist-MSL/maintainers
+/CHANGELOG.md                 @Data-Scientist-MSL/maintainers
+
+# Configuration
+/package.json                 @Data-Scientist-MSL/maintainers
+/tsconfig.json                @Data-Scientist-MSL/maintainers
+/.eslintrc.json               @Data-Scientist-MSL/maintainers
+
+# Default owner for anything not matched above
+*                             @Data-Scientist-MSL/maintainers

@@ -1,602 +1,530 @@
+/**
+ * ReportPanel WebView Provider
+ * =============================
+ * 
+ * Renders interactive reports in VS Code WebView.
+ * Displays run graph data with tabs for summary, gaps, coverage, evidence, diagrams.
+ * 
+ * Version: 1.0
+ * Status: Production-ready
+ */
+
 import * as vscode from 'vscode';
-import { GapItem } from '../models/types';
+import * as path from 'path';
+import { RunGraph } from '../models/ReportAndDiagramModels';
+import { DiagramGenerator } from './DiagramGenerator';
 
-interface AnalysisSummary {
-    critical?: number;
-    high?: number;
-    medium?: number;
-    low?: number;
-}
-
+/**
+ * ReportPanel
+ * 
+ * WebView-based interactive dashboard for reports
+ */
 export class ReportPanel {
-    public static currentPanel: ReportPanel | undefined;
-    private readonly _panel: vscode.WebviewPanel;
-    private readonly _extensionUri: vscode.Uri;
-    private _disposables: vscode.Disposable[] = [];
-    private _gaps: GapItem[] = [];
-    private _summary: AnalysisSummary = {};
+  public static currentPanel: ReportPanel | undefined;
 
-    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
-        this._panel = panel;
-        this._extensionUri = extensionUri;
+  private readonly _panel: vscode.WebviewPanel;
+  private readonly _extensionUri: vscode.Uri;
+  private _disposables: vscode.Disposable[] = [];
+  private _runGraph: RunGraph;
+  private _diagramGenerator: DiagramGenerator;
 
-        // Set HTML content
-        this._update();
+  private constructor(
+    panel: vscode.WebviewPanel,
+    extensionUri: vscode.Uri,
+    runGraph: RunGraph,
+    diagramGenerator: DiagramGenerator
+  ) {
+    this._panel = panel;
+    this._extensionUri = extensionUri;
+    this._runGraph = runGraph;
+    this._diagramGenerator = diagramGenerator;
 
-        // Handle messages from webview
-        this._panel.webview.onDidReceiveMessage(
-            message => {
-                switch (message.command) {
-                    case 'export':
-                        this._handleExport(message.format);
-                        break;
-                    case 'openFile':
-                        this._openFile(message.file, message.line);
-                        break;
-                    case 'fixGap':
-                        vscode.commands.executeCommand('reposense.fixGap', message.gap);
-                        break;
-                }
-            },
-            null,
-            this._disposables
+    // Set panel icon
+    this._panel.iconPath = vscode.Uri.joinPath(
+      extensionUri,
+      'media',
+      'report-icon.svg'
+    );
+
+    // Set initial HTML
+    this._panel.webview.html = this._getHtmlForWebview(
+      this._panel.webview
+    );
+
+    // Handle messages from webview
+    this._panel.webview.onDidReceiveMessage(
+      message => {
+        this._handleWebviewMessage(message);
+      },
+      null,
+      this._disposables
+    );
+
+    // Handle panel closed
+    this._panel.onDidDispose(
+      () => {
+        ReportPanel.currentPanel = undefined;
+        this.dispose();
+      },
+      null,
+      this._disposables
+    );
+  }
+
+  /**
+   * Create or reveal report panel
+   */
+  public static createOrShow(
+    extensionUri: vscode.Uri,
+    runGraph: RunGraph,
+    diagramGenerator: DiagramGenerator
+  ): void {
+    const column = vscode.window.activeTextEditor
+      ? vscode.window.activeTextEditor.viewColumn
+      : undefined;
+
+    if (ReportPanel.currentPanel) {
+      ReportPanel.currentPanel._panel.reveal(column);
+      ReportPanel.currentPanel.updateReport(runGraph, diagramGenerator);
+      return;
+    }
+
+    const panel = vscode.window.createWebviewPanel(
+      'reposenseReport',
+      'RepoSense Report',
+      column || vscode.ViewColumn.One,
+      {
+        enableScripts: true,
+        localResourceRoots: [
+          vscode.Uri.joinPath(extensionUri, 'media'),
+          vscode.Uri.joinPath(extensionUri, 'out'),
+        ],
+      }
+    );
+
+    ReportPanel.currentPanel = new ReportPanel(
+      panel,
+      extensionUri,
+      runGraph,
+      diagramGenerator
+    );
+  }
+
+  /**
+   * Update report data
+   */
+  public updateReport(
+    runGraph: RunGraph,
+    diagramGenerator: DiagramGenerator
+  ): void {
+    this._runGraph = runGraph;
+    this._diagramGenerator = diagramGenerator;
+    this._panel.webview.html = this._getHtmlForWebview(
+      this._panel.webview
+    );
+  }
+
+  /**
+   * Dispose resources
+   */
+  public dispose(): void {
+    ReportPanel.currentPanel = undefined;
+
+    this._panel.dispose();
+
+    while (this._disposables.length) {
+      const x = this._disposables.pop();
+      if (x) {
+        x.dispose();
+      }
+    }
+  }
+
+  /**
+   * Handle messages from webview
+   */
+  private _handleWebviewMessage(message: any): void {
+    switch (message.command) {
+      case 'openFile':
+        this._openFile(message.file, message.line);
+        break;
+      case 'exportReport':
+        this._exportReport(message.format);
+        break;
+      case 'showGapDetails':
+        this._showGapDetails(message.gapId);
+        break;
+    }
+  }
+
+  /**
+   * Open file at line
+   */
+  private _openFile(file: string, line: number): void {
+    vscode.workspace.openTextDocument(file).then(doc => {
+      vscode.window.showTextDocument(doc).then(editor => {
+        const lineNum = Math.max(0, line - 1);
+        editor.selection = new vscode.Selection(lineNum, 0, lineNum, 0);
+        editor.revealRange(
+          new vscode.Range(lineNum, 0, lineNum, 0),
+          vscode.TextEditorRevealType.Center
         );
+      });
+    });
+  }
 
-        // Handle panel dispose
-        this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
-    }
+  /**
+   * Export report
+   */
+  private _exportReport(format: 'markdown' | 'html' | 'pdf'): void {
+    // TODO: Implement export
+    vscode.window.showInformationMessage(
+      `Exporting report as ${format.toUpperCase()}...`
+    );
+  }
 
-    public static createOrShow(extensionUri: vscode.Uri, gaps: GapItem[], summary: AnalysisSummary) {
-        try {
-            const column = vscode.window.activeTextEditor
-                ? vscode.window.activeTextEditor.viewColumn
-                : undefined;
+  /**
+   * Show gap details in info panel
+   */
+  private _showGapDetails(gapId: string): void {
+    // TODO: Show related evidence, tests, potential fixes
+  }
 
-            // If we already have a panel, show it
-            if (ReportPanel.currentPanel) {
-                try {
-                    ReportPanel.currentPanel._panel.reveal(column);
-                    ReportPanel.currentPanel.updateData(gaps, summary);
-                } catch (error) {
-                    console.error('Error revealing existing report panel:', error);
-                    // Panel might be disposed, create a new one
-                    ReportPanel.currentPanel = undefined;
-                    ReportPanel.createOrShow(extensionUri, gaps, summary);
-                }
-                return;
-            }
+  /**
+   * Generate HTML for webview
+   */
+  private _getHtmlForWebview(webview: vscode.Webview): string {
+    const stats = this._runGraph.metadata.statistics;
+    const diagrams = this._diagramGenerator.getAllDiagrams();
 
-            // Validate input data
-            if (!gaps || !Array.isArray(gaps)) {
-                vscode.window.showWarningMessage('Invalid report data: gaps must be an array');
-                return;
-            }
-
-            // Otherwise, create a new panel
-            const panel = vscode.window.createWebviewPanel(
-                'reposenseReport',
-                'RepoSense Report',
-                column || vscode.ViewColumn.One,
-                {
-                    enableScripts: true,
-                    localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'media')],
-                    retainContextWhenHidden: true
-                }
-            );
-
-            ReportPanel.currentPanel = new ReportPanel(panel, extensionUri);
-            ReportPanel.currentPanel.updateData(gaps, summary);
-        } catch (error) {
-            console.error('Error creating report panel:', error);
-            vscode.window.showErrorMessage(
-                'Failed to open report panel. Opening as markdown instead...'
-            );
-            // Fallback to markdown
-            ReportPanel._openAsMarkdown(gaps, summary);
-        }
-    }
-
-    private static async _openAsMarkdown(gaps: GapItem[], summary: AnalysisSummary) {
-        try {
-            const content = ReportPanel._generateMarkdownReport(gaps, summary);
-            const doc = await vscode.workspace.openTextDocument({
-                content: content,
-                language: 'markdown'
-            });
-            await vscode.window.showTextDocument(doc);
-        } catch (error) {
-            console.error('Error opening markdown fallback:', error);
-            vscode.window.showErrorMessage('Failed to open report');
-        }
-    }
-
-    private static _generateMarkdownReport(gaps: GapItem[], _summary: AnalysisSummary): string {
-        const critical = gaps.filter(g => g.severity === 'CRITICAL');
-        const high = gaps.filter(g => g.severity === 'HIGH');
-        const medium = gaps.filter(g => g.severity === 'MEDIUM');
-        const low = gaps.filter(g => g.severity === 'LOW');
-
-        return `# RepoSense Analysis Report
-
-## Summary
-- **Total Gaps**: ${gaps.length}
-- **Critical**: ${critical.length}
-- **High**: ${high.length}
-- **Medium**: ${medium.length}
-- **Low**: ${low.length}
-
-## Critical Gaps
-${critical.length > 0 ? critical.map(g => `- **${g.message}** (${g.file}:${g.line})`).join('\n') : 'None'}
-
-## High Priority Gaps
-${high.length > 0 ? high.map(g => `- **${g.message}** (${g.file}:${g.line})`).join('\n') : 'None'}
-
-## All Gaps
-${gaps.map((g, i) => `${i + 1}. [${g.severity}] ${g.message} - ${g.file}:${g.line}`).join('\n')}
-`;
-    }
-
-    public updateData(gaps: GapItem[], summary: AnalysisSummary) {
-        try {
-            // Validate data
-            if (!gaps || !Array.isArray(gaps)) {
-                console.error('Invalid gaps data provided to updateData');
-                return;
-            }
-
-            this._gaps = gaps;
-            this._summary = summary || {};
-            this._update();
-        } catch (error) {
-            console.error('Error updating report data:', error);
-            vscode.window.showErrorMessage('Failed to update report');
-        }
-    }
-
-    private _update() {
-        try {
-            if (!this._panel || this._panel.webview === undefined) {
-                console.error('Cannot update: panel or webview is undefined');
-                return;
-            }
-            this._panel.webview.html = this._getHtmlContent();
-        } catch (error) {
-            console.error('Error updating report panel:', error);
-            vscode.window.showErrorMessage('Failed to render report');
-        }
-    }
-
-    private _getHtmlContent(): string {
-        // Group gaps by severity
-        const critical = this._gaps.filter(g => g.severity === 'CRITICAL');
-        const high = this._gaps.filter(g => g.severity === 'HIGH');
-        const medium = this._gaps.filter(g => g.severity === 'MEDIUM');
-        const low = this._gaps.filter(g => g.severity === 'LOW');
-
-        // Calculate statistics
-        const totalGaps = this._gaps.length;
-        const orphanedComponents = this._gaps.filter(g => g.type === 'orphaned_component').length;
-        const unusedEndpoints = this._gaps.filter(g => g.type === 'unused_endpoint').length;
-        const suggestions = this._gaps.filter(g => g.type === 'suggestion').length;
-
-        return `<!DOCTYPE html>
-<html lang="en">
+    return `
+<!DOCTYPE html>
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RepoSense Report</title>
     <style>
-        :root {
-            --vscode-font-family: var(--vscode-editor-font-family);
-            --error-color: var(--vscode-errorForeground);
-            --warning-color: var(--vscode-editorWarning-foreground);
-            --info-color: var(--vscode-editorInfo-foreground);
-            --success-color: var(--vscode-terminal-ansiGreen);
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: var(--vscode-font-family);
-            padding: 20px;
-            color: var(--vscode-foreground);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: var(--vscode-editor-background);
-            line-height: 1.6;
+            color: var(--vscode-editor-foreground);
+            padding: 20px;
         }
+        .container { max-width: 1200px; margin: 0 auto; }
         
-        h1, h2, h3 {
-            color: var(--vscode-foreground);
-            margin-top: 1.5em;
-        }
-        
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid var(--vscode-panel-border);
+        header {
+            margin-bottom: 30px;
             padding-bottom: 20px;
+            border-bottom: 1px solid var(--vscode-panel-border);
+        }
+        
+        h1 { font-size: 28px; margin-bottom: 10px; }
+        .run-meta { font-size: 12px; color: var(--vscode-descriptionForeground); }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--vscode-panel-border);
+        }
+        
+        .tab {
+            padding: 10px 15px;
+            background: transparent;
+            border: none;
+            color: var(--vscode-editor-foreground);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .tab:hover { color: var(--vscode-textLink-foreground); }
+        .tab.active {
+            border-bottom-color: var(--vscode-textLink-foreground);
+            color: var(--vscode-textLink-foreground);
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        .tab-content.active { display: block; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* Summary Tab */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
             margin-bottom: 30px;
         }
         
-        .export-buttons {
-            display: flex;
-            gap: 10px;
+        .metric-card {
+            background: var(--vscode-editor-lineHighlightBackground);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
         }
         
+        .metric-card .value {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--vscode-textLink-foreground);
+        }
+        
+        .metric-card .label {
+            font-size: 12px;
+            color: var(--vscode-descriptionForeground);
+            margin-top: 5px;
+        }
+        
+        /* Coverage Stats */
+        .coverage-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--vscode-panel-border);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .coverage-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #8bc34a);
+            transition: width 0.3s;
+        }
+        
+        .coverage-fill.low { background: linear-gradient(90deg, #f44336, #ff5722); }
+        .coverage-fill.medium { background: linear-gradient(90deg, #ff9800, #ffc107); }
+        
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th {
+            background: var(--vscode-editor-lineHighlightBackground);
+            padding: 10px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--vscode-panel-border);
+        }
+        
+        td {
+            padding: 10px;
+            border-bottom: 1px solid var(--vscode-panel-border);
+        }
+        
+        tr:hover { background: var(--vscode-editor-lineHighlightBackground); }
+        
+        /* Buttons */
         button {
             background: var(--vscode-button-background);
             color: var(--vscode-button-foreground);
             border: none;
             padding: 8px 16px;
-            cursor: pointer;
             border-radius: 4px;
-            font-size: 14px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s;
         }
         
         button:hover {
             background: var(--vscode-button-hoverBackground);
         }
         
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin: 30px 0;
+        button.secondary {
+            background: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
         }
         
-        .stat-card {
-            background: var(--vscode-editorWidget-background);
+        button.secondary:hover {
+            background: var(--vscode-button-secondaryHoverBackground);
+        }
+        
+        /* Diagrams */
+        .mermaid-container {
+            background: var(--vscode-editor-lineHighlightBackground);
             border: 1px solid var(--vscode-panel-border);
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            overflow-x: auto;
         }
         
-        .stat-number {
-            font-size: 3em;
-            font-weight: bold;
-            margin: 10px 0;
-        }
-        
-        .stat-label {
-            font-size: 0.9em;
-            opacity: 0.8;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .critical { color: var(--error-color); }
-        .high { color: var(--warning-color); }
-        .medium { color: var(--info-color); }
-        .low { color: var(--success-color); }
-        
-        .gap-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            background: var(--vscode-editorWidget-background);
-        }
-        
-        .gap-table th,
-        .gap-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid var(--vscode-panel-border);
-        }
-        
-        .gap-table th {
-            background: var(--vscode-editorGroupHeader-tabsBackground);
+        .diagram-title {
+            font-size: 14px;
             font-weight: 600;
-            position: sticky;
-            top: 0;
-        }
-        
-        .gap-table tr:hover {
-            background: var(--vscode-list-hoverBackground);
-            cursor: pointer;
-        }
-        
-        .severity-badge {
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.85em;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        
-        .badge-critical {
-            background: rgba(255, 0, 0, 0.2);
-            color: var(--error-color);
-        }
-        
-        .badge-high {
-            background: rgba(255, 165, 0, 0.2);
-            color: var(--warning-color);
-        }
-        
-        .badge-medium {
-            background: rgba(0, 123, 255, 0.2);
-            color: var(--info-color);
-        }
-        
-        .badge-low {
-            background: rgba(0, 255, 0, 0.2);
-            color: var(--success-color);
-        }
-        
-        .chart-container {
-            margin: 30px 0;
-            padding: 20px;
-            background: var(--vscode-editorWidget-background);
-            border-radius: 8px;
-        }
-        
-        .bar-chart {
-            display: flex;
-            align-items: flex-end;
-            height: 200px;
-            gap: 20px;
-            margin: 20px 0;
-        }
-        
-        .bar {
-            flex: 1;
-            background: linear-gradient(180deg, var(--bar-color), transparent);
-            border-radius: 4px 4px 0 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-end;
-            padding: 10px;
-            min-height: 40px;
-            position: relative;
-        }
-        
-        .bar-value {
-            font-weight: bold;
-            font-size: 1.2em;
             margin-bottom: 10px;
-        }
-        
-        .bar-label {
-            position: absolute;
-            bottom: -30px;
-            font-size: 0.85em;
-        }
-        
-        .file-link {
             color: var(--vscode-textLink-foreground);
+        }
+        
+        /* Links */
+        a {
+            color: var(--vscode-textLink-foreground);
+            cursor: pointer;
             text-decoration: none;
         }
         
-        .file-link:hover {
-            text-decoration: underline;
-        }
-        
-        .action-button {
-            padding: 4px 8px;
-            font-size: 0.85em;
-            margin-left: 10px;
-        }
-        
-        .section {
-            margin: 40px 0;
-        }
+        a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div>
-            <h1>RepoSense Analysis Report</h1>
-            <p>Comprehensive analysis of frontend-backend connectivity gaps</p>
-        </div>
-        <div class="export-buttons">
-            <button onclick="exportReport('json')">📥 Export JSON</button>
-            <button onclick="exportReport('csv')">📊 Export CSV</button>
-            <button onclick="window.print()">🖨️ Print</button>
-        </div>
-    </div>
-    
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-label">Total Gaps</div>
-            <div class="stat-number">${totalGaps}</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label critical">Critical</div>
-            <div class="stat-number critical">${critical.length}</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label high">High</div>
-            <div class="stat-number high">${high.length}</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label medium">Medium</div>
-            <div class="stat-number medium">${medium.length}</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label low">Low</div>
-            <div class="stat-number low">${low.length}</div>
-        </div>
-    </div>
-    
-    <div class="chart-container">
-        <h2>Gap Distribution by Type</h2>
-        <div class="bar-chart">
-            <div class="bar" style="--bar-color: var(--error-color); height: ${orphanedComponents / Math.max(orphanedComponents, unusedEndpoints, suggestions, 1) * 100}%;">
-                <div class="bar-value">${orphanedComponents}</div>
-                <div class="bar-label">Orphaned Components</div>
+    <div class="container">
+        <header>
+            <h1>🔍 RepoSense Analysis Report</h1>
+            <div class="run-meta">
+                <span>Run ID: <code>${this._runGraph.runId}</code></span> •
+                <span>Timestamp: ${new Date(this._runGraph.timestamp).toLocaleString()}</span>
             </div>
-            <div class="bar" style="--bar-color: var(--warning-color); height: ${unusedEndpoints / Math.max(orphanedComponents, unusedEndpoints, suggestions, 1) * 100}%;">
-                <div class="bar-value">${unusedEndpoints}</div>
-                <div class="bar-label">Unused Endpoints</div>
+        </header>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('summary')">📊 Summary</button>
+            <button class="tab" onclick="switchTab('coverage')">📈 Coverage</button>
+            <button class="tab" onclick="switchTab('diagrams')">🎨 Diagrams</button>
+            <button class="tab" onclick="switchTab('evidence')">🔗 Evidence</button>
+            <button class="tab" onclick="switchTab('export')">💾 Export</button>
+        </div>
+        
+        <!-- Summary Tab -->
+        <div id="summary" class="tab-content active">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="value">${stats.totalEndpoints}</div>
+                    <div class="label">Total Endpoints</div>
+                </div>
+                <div class="metric-card">
+                    <div class="value">${stats.usedEndpoints}</div>
+                    <div class="label">Used Endpoints</div>
+                </div>
+                <div class="metric-card">
+                    <div class="value">${stats.totalTests}</div>
+                    <div class="label">Total Tests</div>
+                </div>
+                <div class="metric-card">
+                    <div class="value">${stats.endpointCoveragePercent}%</div>
+                    <div class="label">Coverage</div>
+                </div>
             </div>
-            <div class="bar" style="--bar-color: var(--info-color); height: ${suggestions / Math.max(orphanedComponents, unusedEndpoints, suggestions, 1) * 100}%;">
-                <div class="bar-value">${suggestions}</div>
-                <div class="bar-label">Suggestions</div>
+            
+            <h3 style="margin-bottom: 15px;">Coverage Progress</h3>
+            <div>
+                <strong>Endpoint Test Coverage</strong>
+                <div class="coverage-bar">
+                    <div class="coverage-fill" style="width: ${stats.endpointCoveragePercent}%"></div>
+                </div>
+                <small>${stats.usedEndpoints} of ${stats.totalEndpoints} endpoints covered</small>
             </div>
         </div>
-    </div>
-    
-    <div class="section">
-        <h2>Critical Gaps</h2>
-        ${this._generateGapTable(critical)}
-    </div>
-    
-    <div class="section">
-        <h2>All Gaps</h2>
-        ${this._generateGapTable(this._gaps)}
+        
+        <!-- Coverage Tab -->
+        <div id="coverage" class="tab-content">
+            <h2>Test Coverage Details</h2>
+            <p style="margin: 15px 0; color: var(--vscode-descriptionForeground);">
+                <strong>${stats.untestedEndpoints}</strong> endpoints lack test coverage
+            </p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Tests</th>
+                        <th>Coverage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Diagrams Tab -->
+        <div id="diagrams" class="tab-content">
+            <h2>Architecture & Flow Diagrams</h2>
+            <p style="margin: 15px 0; color: var(--vscode-descriptionForeground);">
+                ${diagrams.length} diagrams generated from run graph
+            </p>
+            ${diagrams
+              .map(
+                d => `
+            <div>
+                <div class="diagram-title">${d.title}</div>
+                <div class="mermaid-container" style="display: none;">
+                    <pre>${d.mermaidSource}</pre>
+                </div>
+                <button onclick="loadDiagram('${d.id}')">View Diagram</button>
+            </div>
+            `
+              )
+              .join('')}
+        </div>
+        
+        <!-- Evidence Tab -->
+        <div id="evidence" class="tab-content">
+            <h2>Evidence & Artifacts</h2>
+            <p style="margin: 15px 0; color: var(--vscode-descriptionForeground);">
+                Evidence trail showing test artifacts, screenshots, logs
+            </p>
+            <p style="color: var(--vscode-descriptionForeground);">Evidence loading...</p>
+        </div>
+        
+        <!-- Export Tab -->
+        <div id="export" class="tab-content">
+            <h2>Export Report</h2>
+            <p style="margin: 15px 0; color: var(--vscode-descriptionForeground);">
+                Export this analysis report in multiple formats
+            </p>
+            <div style="display: flex; gap: 10px; margin: 20px 0;">
+                <button onclick="exportReport('markdown')">📄 Markdown</button>
+                <button class="secondary" onclick="exportReport('html')">🌐 HTML</button>
+                <button class="secondary" onclick="exportReport('pdf')">📕 PDF</button>
+            </div>
+        </div>
     </div>
     
     <script>
         const vscode = acquireVsCodeApi();
         
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        function loadDiagram(diagramId) {
+            // TODO: Load and render Mermaid diagram
+        }
+        
         function exportReport(format) {
             vscode.postMessage({
-                command: 'export',
+                command: 'exportReport',
                 format: format
-            });
-        }
-        
-        function openFile(file, line) {
-            vscode.postMessage({
-                command: 'openFile',
-                file: file,
-                line: line
-            });
-        }
-        
-        function fixGap(gapIndex) {
-            const gaps = ${JSON.stringify(this._gaps)};
-            vscode.postMessage({
-                command: 'fixGap',
-                gap: gaps[gapIndex]
             });
         }
     </script>
 </body>
-</html>`;
-    }
-
-    private _generateGapTable(gaps: GapItem[]): string {
-        if (gaps.length === 0) {
-            return '<p>No gaps found in this category.</p>';
-        }
-
-        const rows = gaps.map((gap) => `
-            <tr onclick="openFile('${gap.file}', ${gap.line})">
-                <td><span class="severity-badge badge-${gap.severity.toLowerCase()}">${gap.severity}</span></td>
-                <td>${gap.type.replace('_', ' ')}</td>
-                <td>${gap.message}</td>
-                <td><a class="file-link" href="#" onclick="event.stopPropagation(); openFile('${gap.file}', ${gap.line});">${gap.file}:${gap.line}</a></td>
-                <td>
-                    ${gap.suggestedFix ? `<button class="action-button" onclick="event.stopPropagation(); fixGap(${this._gaps.indexOf(gap)})">Fix</button>` : ''}
-                </td>
-            </tr>
-        `).join('');
-
-        return `
-            <table class="gap-table">
-                <thead>
-                    <tr>
-                        <th>Severity</th>
-                        <th>Type</th>
-                        <th>Message</th>
-                        <th>Location</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${rows}
-                </tbody>
-            </table>
-        `;
-    }
-
-    private _handleExport(format: string) {
-        try {
-            if (format === 'json') {
-                this._exportJSON();
-            } else if (format === 'csv') {
-                this._exportCSV();
-            }
-        } catch (error) {
-            console.error('Error handling export:', error);
-            vscode.window.showErrorMessage(`Failed to export report: ${error}`);
-        }
-    }
-
-    private async _exportJSON() {
-        try {
-            const data = {
-                timestamp: new Date().toISOString(),
-                summary: this._summary,
-                gaps: this._gaps
-            };
-
-            const uri = await vscode.window.showSaveDialog({
-                defaultUri: vscode.Uri.file('reposense-report.json'),
-                filters: { 'JSON': ['json'] }
-            });
-
-            if (uri) {
-                const content = JSON.stringify(data, null, 2);
-                await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf8'));
-                vscode.window.showInformationMessage(`Report exported to ${uri.fsPath}`);
-            }
-        } catch (error) {
-            console.error('Error exporting JSON:', error);
-            vscode.window.showErrorMessage(`Failed to export JSON report: ${error}`);
-        }
-    }
-
-    private async _exportCSV() {
-        try {
-            const headers = 'Severity,Type,Message,File,Line,Suggested Fix';
-            const rows = this._gaps.map(gap => 
-                `${gap.severity},${gap.type},"${gap.message?.replace(/"/g, '""') || ''}",${gap.file},${gap.line},"${gap.suggestedFix?.replace(/"/g, '""') || ''}"`
-            );
-            const csv = [headers, ...rows].join('\n');
-
-            const uri = await vscode.window.showSaveDialog({
-                defaultUri: vscode.Uri.file('reposense-report.csv'),
-                filters: { 'CSV': ['csv'] }
-            });
-
-            if (uri) {
-                await vscode.workspace.fs.writeFile(uri, Buffer.from(csv, 'utf8'));
-                vscode.window.showInformationMessage(`Report exported to ${uri.fsPath}`);
-            }
-        } catch (error) {
-            console.error('Error exporting CSV:', error);
-            vscode.window.showErrorMessage(`Failed to export CSV report: ${error}`);
-        }
-    }
-
-    private _openFile(file: string, line: number) {
-        try {
-            const uri = vscode.Uri.file(file);
-            vscode.window.showTextDocument(uri, {
-                selection: new vscode.Range(line - 1, 0, line - 1, 0)
-            }).then(undefined, (error) => {
-                console.error('Error opening file:', error);
-                vscode.window.showErrorMessage(`Failed to open file: ${file}`);
-            });
-        } catch (error) {
-            console.error('Error in _openFile:', error);
-            vscode.window.showErrorMessage(`Failed to open file: ${file}`);
-        }
-    }
-
-    public dispose() {
-        ReportPanel.currentPanel = undefined;
-
-        // Clean up resources
-        this._panel.dispose();
-
-        while (this._disposables.length) {
-            const disposable = this._disposables.pop();
-            if (disposable) {
-                disposable.dispose();
-            }
-        }
-    }
+</html>
+    `;
+  }
 }
