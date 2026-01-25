@@ -36,6 +36,10 @@ import { EvidenceSigner, getEvidenceSigner } from './services/evidence/EvidenceS
 import { AgentOrchestrator, getAgentOrchestrator, AgentType } from './services/agents/AgentOrchestrator';
 import { RemediationAgent } from './services/agents/RemediationAgent';
 import { GraphEngine } from './services/analysis/GraphEngine';
+import { Logger } from './utils/Logger';
+import { Telemetry } from './utils/Telemetry';
+import { getCloudStorage } from './services/storage/CloudStorageAdapter';
+import { getWorkerManager } from './services/scaling/DistributedWorker';
 
 let languageClient: LanguageClient;
 let codeLensProvider: RepoSenseCodeLensProvider;
@@ -84,6 +88,11 @@ export function activate(context: vscode.ExtensionContext) {
     incrementalAnalyzer = new IncrementalAnalyzer();
     scanDebouncer = new Debouncer();
 
+    // Initialize Production Observability
+    const logger = Logger.getInstance();
+    const telemetry = Telemetry.getInstance();
+    logger.info('SYSTEM', 'RepoSense extension activating...');
+
     // Epic 4: Initialize LLM services
     ollamaService = new OllamaService();
     testGenerator = new TestGenerator(ollamaService);
@@ -123,6 +132,11 @@ export function activate(context: vscode.ExtensionContext) {
             });
         }
     });
+
+    // Initialize Scaling & Cloud
+    const workerManager = getWorkerManager(agentOrchestrator);
+    const cloudStorage = getCloudStorage();
+    logger.info('SYSTEM', 'Infrastructure services initialized');
 
     // Check Ollama availability on startup
     ollamaService.checkHealth().then(isHealthy => {

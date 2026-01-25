@@ -1,11 +1,19 @@
 import * as vscode from 'vscode';
+import { Logger } from './Logger';
+import { Telemetry } from './Telemetry';
+import { CircuitBreaker, CircuitBreakerOptions } from './CircuitBreaker';
 
 export class ErrorHandler {
     private static instance: ErrorHandler;
     private errorLog: ErrorLogEntry[] = [];
     private readonly maxLogSize = 100;
+    private logger: Logger;
+    private telemetry: Telemetry;
+    private circuitBreakers: Map<string, CircuitBreaker> = new Map();
 
     private constructor() {
+        this.logger = Logger.getInstance();
+        this.telemetry = Telemetry.getInstance();
         this.setupGlobalErrorHandlers();
     }
 
@@ -91,18 +99,19 @@ export class ErrorHandler {
             this.errorLog.shift();
         }
 
-        // Log to console based on severity
-        const logMethod = severity === 'critical' || severity === 'error' 
-            ? console.error 
-            : severity === 'warning' 
-                ? console.warn 
-                : console.log;
-
-        logMethod(`[RepoSense ${severity.toUpperCase()}]`, {
-            operation: context.operation,
-            component: context.component,
-            error: error.message
-        });
+        // Log to new Logger instance
+        const logMsg = `[${severity.toUpperCase()}] ${context.operation}: ${error.message}`;
+        switch (severity) {
+            case 'critical':
+            case 'error':
+                this.logger.error(context.component, logMsg, error);
+                break;
+            case 'warning':
+                this.logger.warn(context.component, logMsg, context);
+                break;
+            default:
+                this.logger.info(context.component, logMsg, context);
+        }
     }
 
     private async showErrorMessage(
@@ -221,9 +230,7 @@ export class ErrorHandler {
     }
 
     private async sendTelemetry(error: Error, context: ErrorContext): Promise<void> {
-        // Placeholder for telemetry implementation
-        // In production, this would send to Application Insights or similar
-        console.log('[Telemetry]', {
+        this.telemetry.trackEvent('error', {
             errorName: error.name,
             errorMessage: error.message,
             operation: context.operation,
@@ -243,6 +250,13 @@ export class ErrorHandler {
 
     public clearErrorLog(): void {
         this.errorLog = [];
+    }
+
+    public getCircuitBreaker(name: string, options: CircuitBreakerOptions = { failureThreshold: 5, resetTimeout: 30000 }): CircuitBreaker {
+        if (!this.circuitBreakers.has(name)) {
+            this.circuitBreakers.set(name, new CircuitBreaker(name, options));
+        }
+        return this.circuitBreakers.get(name)!;
     }
 
     public async withRetry<T>(
@@ -339,4 +353,12 @@ export function withRetry<T>(
     options?: RetryOptions
 ): Promise<T> {
     return ErrorHandler.getInstance().withRetry(operation, options);
+}
+
+export function withCircuitBreaker<T>(
+    name: string,
+    operation: () => Promise<T>,
+    options?: CircuitBreakerOptions
+): Promise<T> {
+    return ErrorHandler.getInstance().getCircuitBreaker(name, options).execute(operation);
 }
