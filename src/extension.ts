@@ -32,6 +32,10 @@ import { TestGenerationService } from './services/llm/TestGenerationService';
 import { ArtifactStore, getArtifactStore } from './services/ArtifactStore';
 import { TestCoverageAnalyzer } from './services/analysis/TestCoverageAnalyzer';
 import { TestExecutor, getTestExecutor } from './services/TestExecutor';
+import { EvidenceSigner, getEvidenceSigner } from './services/evidence/EvidenceSigner';
+import { AgentOrchestrator, getAgentOrchestrator, AgentType } from './services/agents/AgentOrchestrator';
+import { RemediationAgent } from './services/agents/RemediationAgent';
+import { GraphEngine } from './services/analysis/GraphEngine';
 
 let languageClient: LanguageClient;
 let codeLensProvider: RepoSenseCodeLensProvider;
@@ -60,6 +64,10 @@ let artifactStore: ArtifactStore;
 let testCoverageAnalyzer: TestCoverageAnalyzer;
 let testGenerationService: TestGenerationService;
 let testExecutor: TestExecutor;
+let evidenceSigner: EvidenceSigner;
+let agentOrchestrator: AgentOrchestrator;
+let remediationAgent: RemediationAgent;
+let graphEngine: GraphEngine;
 
 export function activate(context: vscode.ExtensionContext) {
     const perfTimer = PerformanceMonitor.getInstance().startTimer('extension.activate', {
@@ -88,17 +96,32 @@ export function activate(context: vscode.ExtensionContext) {
     const workspaceRoot = workspaceFolder?.uri.fsPath || process.cwd();
     const reposenseRoot = path.join(workspaceRoot, '.reposense');
 
+    // Evidence & Agent infrastructure
+    evidenceSigner = getEvidenceSigner();
+    agentOrchestrator = getAgentOrchestrator();
+    graphEngine = new GraphEngine();
+    remediationAgent = new RemediationAgent(ollamaService, graphEngine);
+
     orchestrator = getOrchestrator(reposenseRoot);
-    artifactStore = getArtifactStore(reposenseRoot);
+    artifactStore = getArtifactStore(evidenceSigner, reposenseRoot);
     testCoverageAnalyzer = new TestCoverageAnalyzer();
     testGenerationService = new TestGenerationService(ollamaService, orchestrator, workspaceRoot);
 
-    // Initialize TestExecutor
-    testExecutor = getTestExecutor(orchestrator, {
+    // Initialize TestExecutor with AgentOrchestrator hook
+    testExecutor = getTestExecutor(orchestrator, agentOrchestrator, {
         workingDirectory: workspaceRoot,
         timeout: 60000,
         captureScreenshots: true,
         captureVideo: false
+    });
+
+    // Register agent task listener
+    agentOrchestrator.on('taskCreated', async (task) => {
+        if (task.type === AgentType.REMEDIATION) {
+            agentOrchestrator.runTask(task.id, async (input) => {
+                return remediationAgent.analyzeFailure(input);
+            });
+        }
     });
 
     // Check Ollama availability on startup

@@ -40,12 +40,15 @@ import {
     ReportArtifact,
     ExecutionArtifact
 } from '../models/RunOrchestrator';
+import { EvidenceSigner } from './evidence/EvidenceSigner';
 
 export class ArtifactStore implements IArtifactStore {
     private rootDir: string;
+    private signer: EvidenceSigner;
     private currentRunId: string = '';
 
-    constructor(reposenseRoot: string = '.reposense') {
+    constructor(signer: EvidenceSigner, reposenseRoot: string = '.reposense') {
+        this.signer = signer;
         this.rootDir = reposenseRoot;
     }
 
@@ -97,9 +100,16 @@ export class ArtifactStore implements IArtifactStore {
      * Save analysis artifact
      */
     async saveAnalysis(artifact: AnalysisArtifact): Promise<void> {
-        const filePath = path.join(this.getRunDir(this.currentRunId), 'scan.json');
+        const runDir = this.getRunDir(this.currentRunId);
+        const filePath = path.join(runDir, 'scan.json');
         this.ensureDir(path.dirname(filePath));
-        fs.writeFileSync(filePath, JSON.stringify(artifact, null, 2));
+        
+        const content = JSON.stringify(artifact, null, 2);
+        fs.writeFileSync(filePath, content);
+        
+        // Sign and save signature
+        const signature = this.signer.sign(content);
+        fs.writeFileSync(`${filePath}.sig`, signature);
     }
 
     /**
@@ -108,7 +118,12 @@ export class ArtifactStore implements IArtifactStore {
     async savePlans(plans: (TestPlan | unknown)[]): Promise<void> {
         const filePath = path.join(this.getRunDir(this.currentRunId), 'plan.json');
         this.ensureDir(path.dirname(filePath));
-        fs.writeFileSync(filePath, JSON.stringify(plans, null, 2));
+        const content = JSON.stringify(plans, null, 2);
+        fs.writeFileSync(filePath, content);
+        
+        // Sign
+        const signature = this.signer.sign(content);
+        fs.writeFileSync(`${filePath}.sig`, signature);
     }
 
     /**
@@ -117,7 +132,12 @@ export class ArtifactStore implements IArtifactStore {
     async savePatchApplications(applications: PatchApplication[]): Promise<void> {
         const filePath = path.join(this.getRunDir(this.currentRunId), 'applied-patches.json');
         this.ensureDir(path.dirname(filePath));
-        fs.writeFileSync(filePath, JSON.stringify(applications, null, 2));
+        const content = JSON.stringify(applications, null, 2);
+        fs.writeFileSync(filePath, content);
+        
+        // Sign
+        const signature = this.signer.sign(content);
+        fs.writeFileSync(`${filePath}.sig`, signature);
     }
 
     /**
@@ -126,7 +146,12 @@ export class ArtifactStore implements IArtifactStore {
     async saveExecutionResults(results: ExecutionResult[]): Promise<void> {
         const filePath = path.join(this.getRunDir(this.currentRunId), 'execution-results.json');
         this.ensureDir(path.dirname(filePath));
-        fs.writeFileSync(filePath, JSON.stringify(results, null, 2));
+        const content = JSON.stringify(results, null, 2);
+        fs.writeFileSync(filePath, content);
+        
+        // Sign
+        const signature = this.signer.sign(content);
+        fs.writeFileSync(`${filePath}.sig`, signature);
     }
 
     /**
@@ -137,10 +162,13 @@ export class ArtifactStore implements IArtifactStore {
         this.ensureDir(runDir);
 
         // JSON format
-        fs.writeFileSync(
-            path.join(runDir, 'report.json'),
-            JSON.stringify(report, null, 2)
-        );
+        const jsonContent = JSON.stringify(report, null, 2);
+        const jsonPath = path.join(runDir, 'report.json');
+        fs.writeFileSync(jsonPath, jsonContent);
+        
+        // Sign JSON report
+        const signature = this.signer.sign(jsonContent);
+        fs.writeFileSync(`${jsonPath}.sig`, signature);
 
         // Markdown format
         if (report.markdownContent) {
@@ -408,9 +436,9 @@ export class ArtifactStore implements IArtifactStore {
 // Export singleton
 let storeInstance: ArtifactStore | null = null;
 
-export function getArtifactStore(reposenseRoot?: string): ArtifactStore {
+export function getArtifactStore(signer: EvidenceSigner, reposenseRoot?: string): ArtifactStore {
     if (!storeInstance) {
-        storeInstance = new ArtifactStore(reposenseRoot);
+        storeInstance = new ArtifactStore(signer, reposenseRoot);
     }
     return storeInstance;
 }

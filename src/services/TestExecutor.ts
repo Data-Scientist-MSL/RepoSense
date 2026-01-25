@@ -16,6 +16,7 @@ import {
     TestFramework,
     IRunOrchestrator
 } from '../models/RunOrchestrator';
+import { AgentOrchestrator, AgentType } from './agents/AgentOrchestrator';
 
 export interface ExecutorConfig {
     workingDirectory: string;
@@ -31,10 +32,16 @@ export interface ExecutorConfig {
  */
 export class TestExecutor {
     private orchestrator: IRunOrchestrator;
+    private agentOrchestrator: AgentOrchestrator;
     private config: ExecutorConfig;
 
-    constructor(orchestrator: IRunOrchestrator, config: ExecutorConfig) {
+    constructor(
+        orchestrator: IRunOrchestrator, 
+        agentOrchestrator: AgentOrchestrator, 
+        config: ExecutorConfig
+    ) {
         this.orchestrator = orchestrator;
+        this.agentOrchestrator = agentOrchestrator;
         this.config = config;
     }
 
@@ -92,6 +99,17 @@ export class TestExecutor {
                 testRuns,
                 artifacts
             };
+
+            // Hook: Trigger autonomous agent if test failed
+            if (execution.status === 'FAILED') {
+                this.agentOrchestrator.createTask(AgentType.REMEDIATION, {
+                    executionId,
+                    stdout,
+                    stderr,
+                    framework
+                });
+            }
+
             return execution;
         } catch (error: any) {
             const endTime = Date.now();
@@ -514,8 +532,9 @@ let executorInstance: TestExecutor | null = null;
 
 export function getTestExecutor(
     orchestrator: IRunOrchestrator,
+    agentOrchestrator: AgentOrchestrator,
     config: ExecutorConfig
 ): TestExecutor {
-    executorInstance = new TestExecutor(orchestrator, config);
+    executorInstance = new TestExecutor(orchestrator, agentOrchestrator, config);
     return executorInstance;
 }
