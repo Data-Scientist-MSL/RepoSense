@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+
 
 export class PerformanceMonitor {
     private static instance: PerformanceMonitor;
@@ -15,7 +15,7 @@ export class PerformanceMonitor {
         return PerformanceMonitor.instance;
     }
 
-    public startTimer(operation: string, metadata?: Record<string, any>): PerformanceTimer {
+    public startTimer(operation: string, metadata?: Record<string, unknown>): PerformanceTimer {
         const timer: PerformanceTimer = {
             id: `${operation}_${Date.now()}_${Math.random()}`,
             operation,
@@ -204,7 +204,7 @@ export interface PerformanceTimer {
     operation: string;
     startTime: number;
     startMemory: number;
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
 }
 
 export interface OperationMetric {
@@ -212,7 +212,7 @@ export interface OperationMetric {
     duration: number;
     memoryDelta: number;
     timestamp: string;
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
 }
 
 export interface PerformanceStats {
@@ -244,7 +244,7 @@ export interface BudgetViolation {
 export function measurePerformance<T>(
     operation: string,
     fn: () => T | Promise<T>,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
 ): Promise<T> {
     const monitor = PerformanceMonitor.getInstance();
     const timer = monitor.startTimer(operation, metadata);
@@ -254,7 +254,7 @@ export function measurePerformance<T>(
         return result;
     };
 
-    const handleError = (error: any) => {
+    const handleError = (error: unknown) => {
         monitor.endTimer(timer);
         throw error;
     };

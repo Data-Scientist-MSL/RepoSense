@@ -8,7 +8,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { SafeArtifactIO } from './SafeArtifactIO';
-import { RepoSenseError, ErrorCodes } from './RepoSenseError';
+
 import { ErrorFactory } from './ErrorFactory';
 
 export interface HealthCheckResult {

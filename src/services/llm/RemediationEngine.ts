@@ -71,7 +71,7 @@ export class RemediationEngine {
         let codeChanges: CodeChange[] = [];
 
         if (gap.type === 'orphaned_component') {
-            codeChanges = await this.generateMissingEndpoint(gap, code, language);
+            codeChanges = await this.generateMissingEndpoint(gap);
         } else if (gap.type === 'unused_endpoint') {
             codeChanges = await this.generateFrontendCall(gap, code, language);
         } else if (gap.suggestedFix) {
@@ -90,9 +90,7 @@ export class RemediationEngine {
     }
 
     private async generateMissingEndpoint(
-        gap: GapItem,
-        code: string,
-        language: string
+        gap: GapItem
     ): Promise<CodeChange[]> {
         // Extract endpoint details from gap message
         const endpointMatch = gap.message.match(/(GET|POST|PUT|DELETE|PATCH)\s+([^\s]+)/);
@@ -316,7 +314,7 @@ Return ONLY the code without explanations:`;
         }
     }
 
-    private async findEndpointInsertionPoint(filePath: string): Promise<number> {
+    private async findEndpointInsertionPoint(_filePath: string): Promise<number> {
         // Default to end of file for new endpoints
         return 0; // Will be enhanced to find the best insertion point
     }

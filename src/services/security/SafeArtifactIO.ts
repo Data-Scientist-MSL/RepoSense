@@ -8,7 +8,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
-import { RepoSenseError, ErrorCodes } from './RepoSenseError';
+import { RepoSenseError } from './RepoSenseError';
 import { ErrorFactory } from './ErrorFactory';
 
 export class SafeArtifactIO {

@@ -26,7 +26,8 @@ import { PerformanceMonitor } from './utils/PerformanceMonitor';
 import { IncrementalAnalyzer } from './utils/IncrementalAnalyzer';
 import { Debouncer } from './utils/BatchProcessor';
 import { RunOrchestrator, getOrchestrator } from './services/RunOrchestrator';
-import { RunConfig, TestFramework } from './models/RunOrchestrator';
+import { RunConfig, TestFramework, RunState, GapType } from './models/RunOrchestrator';
+import { AnalysisResult } from './models/types';
 import { TestGenerationService } from './services/llm/TestGenerationService';
 import { ArtifactStore, getArtifactStore } from './services/ArtifactStore';
 import { TestCoverageAnalyzer } from './services/analysis/TestCoverageAnalyzer';
@@ -36,7 +37,7 @@ let languageClient: LanguageClient;
 let codeLensProvider: RepoSenseCodeLensProvider;
 let codeActionProvider: RepoSenseCodeActionProvider;
 let diagnosticsManager: DiagnosticsManager;
-let lastAnalysisResult: { gaps: GapItem[], summary: any } | undefined;
+let lastAnalysisResult: { gaps: GapItem[], summary: AnalysisResult['summary'] } | undefined;
 
 // Epic 4: Intelligence Layer services
 let ollamaService: OllamaService;
@@ -212,7 +213,7 @@ export function activate(context: vscode.ExtensionContext) {
                         // Send analysis request to language server
                         const result = await languageClient.sendRequest('reposense/analyze', {
                             workspaceRoot: workspaceFolder.uri.fsPath
-                        }) as any;
+                        }) as AnalysisResult;
                         
                         progress.report({ increment: 50, message: 'Processing results...' });
                         
@@ -309,41 +310,41 @@ export function activate(context: vscode.ExtensionContext) {
                         try {
                             // Phase 1: Scan
                             progress.report({ increment: 10, message: 'Scanning repository...' });
-                            await orchestrator.transitionTo(run.runId, 'SCANNING' as any);
+                            await orchestrator.transitionTo(run.runId, 'SCANNING' as RunState);
 
                             const analysisResult = await languageClient.sendRequest('reposense/analyze', {
                                 workspaceRoot
-                            }) as any;
+                            }) as AnalysisResult;
 
-                            await artifactStore.saveAnalysis(analysisResult);
-                            await orchestrator.transitionTo(run.runId, 'PLANNING' as any);
+                            await artifactStore.saveAnalysis(analysisResult as unknown as any);
+                            await orchestrator.transitionTo(run.runId, 'PLANNING' as RunState);
 
                             // Phase 2: Coverage analysis
                             progress.report({ increment: 20, message: 'Analyzing test coverage...' });
                             const testFiles = await testCoverageAnalyzer.findTestFiles(workspaceRoot);
                             const coverageMatrix = testCoverageAnalyzer.buildCoverageMatrix(
-                                analysisResult.endpoints,
+                                analysisResult.endpoints as any[],
                                 testFiles
                             );
                             const untestedGaps = testCoverageAnalyzer.detectUntestedEndpoints(
-                                analysisResult.endpoints,
+                                analysisResult.endpoints as any[],
                                 coverageMatrix
                             );
                             const allGaps = [...analysisResult.gaps, ...untestedGaps];
 
                             // Phase 3: Generate
                             progress.report({ increment: 30, message: 'Generating test plans...' });
-                            await orchestrator.transitionTo(run.runId, 'GENERATING' as any);
+                            await orchestrator.transitionTo(run.runId, 'GENERATING' as RunState);
 
                             const testPlans = await testGenerationService.generateTestPlans(
-                                allGaps,
-                                analysisResult.endpoints
+                                allGaps as any[],
+                                analysisResult.endpoints as any[]
                             );
                             await artifactStore.savePlans(testPlans);
 
                             // Phase 4: Apply
                             progress.report({ increment: 50, message: 'Applying test candidates...' });
-                            await orchestrator.transitionTo(run.runId, 'APPLYING' as any);
+                            await orchestrator.transitionTo(run.runId, 'APPLYING' as RunState);
 
                             for (const plan of testPlans.slice(0, 3)) {  // Limit to first 3 for demo
                                 const bestCandidate = plan.testCandidates[0];  // Take highest confidence
@@ -354,7 +355,7 @@ export function activate(context: vscode.ExtensionContext) {
 
                             // Phase 5: Execute
                             progress.report({ increment: 70, message: 'Executing tests...' });
-                            await orchestrator.transitionTo(run.runId, 'EXECUTING' as any);
+                            await orchestrator.transitionTo(run.runId, 'EXECUTING' as RunState);
 
                             const executionResults = await testExecutor.executeTestsParallel(
                                 run.runId,
@@ -364,7 +365,7 @@ export function activate(context: vscode.ExtensionContext) {
 
                             // Phase 6: Report
                             progress.report({ increment: 90, message: 'Generating report...' });
-                            await orchestrator.transitionTo(run.runId, 'REPORTING' as any);
+                            await orchestrator.transitionTo(run.runId, 'REPORTING' as RunState);
 
                             const report = {
                                 reportId: `report_${run.runId}`,
@@ -386,13 +387,13 @@ export function activate(context: vscode.ExtensionContext) {
                                         LOW: allGaps.filter(g => g.severity === 'LOW').length
                                     },
                                     gapsByTypeCount: {
-                                        missing_endpoint: allGaps.filter(g => g.type === 'MISSING_ENDPOINT').length,
-                                        unused_endpoint: allGaps.filter(g => g.type === 'UNUSED_ENDPOINT').length,
-                                        untested_endpoint: allGaps.filter(g => g.type === 'UNTESTED_ENDPOINT').length,
-                                        type_mismatch: allGaps.filter(g => g.type === 'TYPE_MISMATCH').length,
-                                        missing_crud: allGaps.filter(g => g.type === 'MISSING_CRUD').length,
-                                        orphaned_component: allGaps.filter(g => g.type === 'ORPHANED_COMPONENT').length,
-                                        suggestion: allGaps.filter(g => g.type === 'SUGGESTION').length
+                                        [GapType.MISSING_ENDPOINT]: (allGaps as any[]).filter(g => g.type === GapType.MISSING_ENDPOINT || g.type === 'missing_endpoint').length,
+                                        [GapType.UNUSED_ENDPOINT]: (allGaps as any[]).filter(g => g.type === GapType.UNUSED_ENDPOINT || g.type === 'unused_endpoint').length,
+                                        [GapType.UNTESTED_ENDPOINT]: (allGaps as any[]).filter(g => g.type === GapType.UNTESTED_ENDPOINT || g.type === 'untested_endpoint').length,
+                                        [GapType.TYPE_MISMATCH]: (allGaps as any[]).filter(g => g.type === GapType.TYPE_MISMATCH || g.type === 'type_mismatch').length,
+                                        [GapType.MISSING_CRUD]: (allGaps as any[]).filter(g => g.type === GapType.MISSING_CRUD || g.type === 'missing_crud').length,
+                                        [GapType.ORPHANED_COMPONENT]: (allGaps as any[]).filter(g => g.type === GapType.ORPHANED_COMPONENT || g.type === 'orphaned_component').length,
+                                        [GapType.SUGGESTION]: (allGaps as any[]).filter(g => g.type === GapType.SUGGESTION || g.type === 'suggestion').length
                                     },
                                     testsGenerated: testPlans.length,
                                     testsApplied: Math.min(3, testPlans.length),
@@ -407,8 +408,8 @@ export function activate(context: vscode.ExtensionContext) {
                                 jsonContent: {}
                             };
 
-                            await artifactStore.saveReport(report);
-                            await orchestrator.transitionTo(run.runId, 'DONE' as any);
+                            await artifactStore.saveReport(report as unknown as any);
+                            await orchestrator.transitionTo(run.runId, 'DONE' as RunState);
 
                             progress.report({ increment: 100, message: 'Complete!' });
 
@@ -424,7 +425,7 @@ export function activate(context: vscode.ExtensionContext) {
                             });
 
                         } catch (error: any) {
-                            await orchestrator.transitionTo(run.runId, 'FAILED' as any);
+                            await orchestrator.transitionTo(run.runId, 'FAILED' as RunState);
                             orchestrator.recordError(run.runId, error.message, 'FATAL');
                             statusBarItem.text = '$(error) RepoSense: Run failed';
                             vscode.window.showErrorMessage(`RepoSense run failed: ${error.message}`);

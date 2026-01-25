@@ -9,6 +9,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { QualityGateEngine } from '../services/analysis/QualityGateEngine';
+import { GapItem } from '../models/types';
 
 interface CLIConfig {
   projectPath?: string;
@@ -23,7 +24,7 @@ interface CLIResult {
   command: string;
   exitCode: 0 | 1 | 2;
   message: string;
-  data?: any;
+  data?: unknown;
   timestamp: string;
 }
 
@@ -54,9 +55,9 @@ export class CLIEngine {
   async scan(): Promise<CLIResult> {
     try {
       // Mock gaps for CLI demonstration
-      const gaps: any[] = [
-        { id: 'gap-1', severity: 'high', description: 'Missing error handling' },
-        { id: 'gap-2', severity: 'medium', description: 'Incomplete test coverage' }
+      const gaps: GapItem[] = [
+        { id: 'gap-1', severity: 'HIGH', description: 'Missing error handling', type: 'suggestion', message: 'Error handling missing', file: 'src/api.ts', line: 10 } as GapItem,
+        { id: 'gap-2', severity: 'MEDIUM', description: 'Incomplete test coverage', type: 'suggestion', message: 'Low coverage', file: 'src/utils.ts', line: 5 } as GapItem
       ];
       
       const result: CLIResult = {
@@ -135,7 +136,7 @@ export class CLIEngine {
       const gateConfig = this.loadGateConfig(configPath);
       
       // Mock gaps for demonstration
-      const gaps: any[] = [];
+      const gaps: GapItem[] = [];
       
       // Evaluate gates
       const gateResults = this.gateEngine.evaluate(gaps, gateConfig);
@@ -264,7 +265,7 @@ export class CLIEngine {
     return result;
   }
 
-  private loadGateConfig(configPath?: string): any {
+  private loadGateConfig(configPath?: string): unknown {
     const defaultConfig = {
       maxCriticalGaps: 0,
       maxHighGaps: 3,
@@ -286,7 +287,7 @@ export class CLIEngine {
     }
   }
 
-  private generateHTMLReport(report: any): string {
+  private generateHTMLReport(report: unknown): string {
     return `
       <!DOCTYPE html>
       <html>
@@ -316,7 +317,7 @@ export class CLIEngine {
     fs.writeFileSync(resultPath, JSON.stringify(result, null, 2));
   }
 
-  private createErrorResult(command: string, error: any): CLIResult {
+  private createErrorResult(command: string, error: unknown): CLIResult {
     const message = error instanceof Error ? error.message : String(error);
     return {
       success: false,
@@ -339,7 +340,7 @@ if (require.main === module) {
   const options: CLIConfig = {
     projectPath: process.cwd(),
     configPath: args[1],
-    format: (args[2] as any) || 'both'
+    format: (args[2] as 'json' | 'html' | 'both') || 'both'
   };
 
   const cli = new CLIEngine(options);

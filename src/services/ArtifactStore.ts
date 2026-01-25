@@ -105,7 +105,7 @@ export class ArtifactStore implements IArtifactStore {
     /**
      * Save test and remediation plans
      */
-    async savePlans(plans: (TestPlan | any)[]): Promise<void> {
+    async savePlans(plans: (TestPlan | unknown)[]): Promise<void> {
         const filePath = path.join(this.getRunDir(this.currentRunId), 'plan.json');
         this.ensureDir(path.dirname(filePath));
         fs.writeFileSync(filePath, JSON.stringify(plans, null, 2));
@@ -272,9 +272,9 @@ export class ArtifactStore implements IArtifactStore {
     /**
      * List all saved artifacts for a run
      */
-    async listRunArtifacts(runId: string): Promise<any[]> {
+    async listRunArtifacts(runId: string): Promise<unknown[]> {
         const runDir = this.getRunDir(runId);
-        const artifacts: any[] = [];
+        const artifacts: unknown[] = [];
 
         const walk = (dir: string, relativePrefix: string = '') => {
             if (!fs.existsSync(dir)) return;
@@ -371,7 +371,7 @@ export class ArtifactStore implements IArtifactStore {
         }
     }
 
-    private updateIndex(runId: string, key: string, value: any): void {
+    private updateIndex(runId: string, key: string, value: unknown): void {
         const indexPath = path.join(this.getRunDir(runId), 'index.json');
         if (fs.existsSync(indexPath)) {
             const index = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
@@ -381,7 +381,7 @@ export class ArtifactStore implements IArtifactStore {
         }
     }
 
-    private addArtifactToIndex(runId: string, category: string, artifact: any): void {
+    private addArtifactToIndex(runId: string, category: string, artifact: unknown): void {
         const indexPath = path.join(this.getRunDir(runId), 'index.json');
         if (fs.existsSync(indexPath)) {
             const index = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
