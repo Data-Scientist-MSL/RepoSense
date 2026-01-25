@@ -3,6 +3,7 @@ import { AgentOrchestrator, AgentType } from './AgentOrchestrator';
 import { UIUXAnalyzer, RecommendationPack } from '../UIUXAnalyzer';
 import { RemediationAgent } from './RemediationAgent';
 import { OllamaService } from '../llm/OllamaService';
+import { withRetry } from '../../utils/ErrorHandler';
 
 export interface ConsultantContext {
     testResults?: any;
@@ -44,7 +45,10 @@ Provide:
 Maintain a professional, authoritative yet helpful tone.`;
 
         try {
-            const advice = await this.ollama.generate(prompt, { system: systemPrompt, temperature: 0.3 });
+            const advice = await withRetry(
+                () => this.ollama.generate(prompt, { system: systemPrompt, temperature: 0.3 }),
+                { maxAttempts: 3, delayMs: 2000, retryableErrors: ['timeout', 'ECONNREFUSED'] }
+            );
             this.outputChannel.appendLine('✅ ConsultantAgent: Strategic advice generated.');
             return advice;
         } catch (error) {

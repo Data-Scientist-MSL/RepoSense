@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ConsultantAgent = void 0;
+const ErrorHandler_1 = require("../../utils/ErrorHandler");
 class ConsultantAgent {
     constructor(ollama, orchestrator, uiuxAnalyzer, remediationAgent, outputChannel) {
         this.ollama = ollama;
@@ -29,7 +30,7 @@ Provide:
 
 Maintain a professional, authoritative yet helpful tone.`;
         try {
-            const advice = await this.ollama.generate(prompt, { system: systemPrompt, temperature: 0.3 });
+            const advice = await (0, ErrorHandler_1.withRetry)(() => this.ollama.generate(prompt, { system: systemPrompt, temperature: 0.3 }), { maxAttempts: 3, delayMs: 2000, retryableErrors: ['timeout', 'ECONNREFUSED'] });
             this.outputChannel.appendLine('✅ ConsultantAgent: Strategic advice generated.');
             return advice;
         }

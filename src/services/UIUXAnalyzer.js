@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UIUXAnalyzer = void 0;
 const OllamaService_1 = require("./llm/OllamaService");
+const ErrorHandler_1 = require("../utils/ErrorHandler");
 // ============================================================================
 // AI-POWERED UI/UX ANALYZER
 // ============================================================================
@@ -16,10 +17,12 @@ class UIUXAnalyzer {
     async analyzeTestResults(testResult, gap) {
         this.outputChannel.appendLine('🎨 Starting UI/UX Analysis...');
         // Use AI to analyze screenshots and agent observations
-        const issues = await this.detectUIUXIssues(testResult);
+        const issues = await (0, ErrorHandler_1.withRetry)(() => this.detectUIUXIssues(testResult), { maxAttempts: 3 });
         // Generate mockups for each issue
         for (const issue of issues) {
-            issue.toBe.mockup = await this.generateMockup(issue);
+            issue.toBe.mockup = this.sanitizeSVG(await (0, ErrorHandler_1.withRetry)(() => this.generateMockup(issue), { maxAttempts: 3 }));
+            // asIs.mockup can be the same or a placeholder since generateMockup currently combines both
+            issue.asIs.mockup = issue.toBe.mockup;
         }
         // Create prioritized roadmap
         const roadmap = this.generateRoadmap(issues);
@@ -746,7 +749,7 @@ Please provide a "Consultant's Note" for the top critical issue or an overall st
 Focus on user impact and competitive advantage. 
 Return your response as a single concise expert insight (max 150 words).`;
         try {
-            const expertInsight = await this.ollama.generate(prompt, { system: systemPrompt });
+            const expertInsight = await (0, ErrorHandler_1.withRetry)(() => this.ollama.generate(prompt, { system: systemPrompt }), { maxAttempts: 3, delayMs: 2000, retryableErrors: ['timeout', 'ECONNREFUSED'] });
             // Add expert insight to the disclaimer or as a new field
             pack.description += `\n\n**UI/UX Expert Consultation**: "${expertInsight}"`;
             this.outputChannel.appendLine('✅ Expert consultation complete.');
@@ -754,6 +757,16 @@ Return your response as a single concise expert insight (max 150 words).`;
         catch (error) {
             this.outputChannel.appendLine(`⚠️ Expert consultation unavailable: ${error}`);
         }
+    }
+    /**
+     * Simple SVG Sanitization to ensure safe rendering
+     */
+    sanitizeSVG(svg) {
+        // Remove scripts and event handlers
+        return svg
+            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+            .replace(/ on\w+="[^"]*"/gi, '')
+            .replace(/ on\w+='[^']*'/gi, '');
     }
     calculateScores(issues) {
         // Mock score calculation based on issue count/severity
