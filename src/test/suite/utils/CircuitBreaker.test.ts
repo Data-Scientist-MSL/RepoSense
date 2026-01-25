@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { CircuitBreaker, CircuitState } from '../../utils/CircuitBreaker';
+import { CircuitBreaker, CircuitState } from '../../../utils/CircuitBreaker';
 
 describe('CircuitBreaker Unit Tests', () => {
     it('should start in CLOSED state', () => {

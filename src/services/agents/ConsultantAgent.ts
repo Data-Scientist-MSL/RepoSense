@@ -27,22 +27,23 @@ export class ConsultantAgent {
     async consult(context: ConsultantContext): Promise<string> {
         this.outputChannel.appendLine('🧐 ConsultantAgent: Synthesizing cross-agent insights...');
 
-        const systemPrompt = `You are a Principal Software Consultant and Digital Architect. 
-Your role is to synthesize data from multiple specialized agents (UI/UX, Security, Testing, Remediation) into a unified, high-level strategic roadmap for the user.
-You should provide clear priority, business value, and technical feasibility for your recommendations.`;
+        const systemPrompt = `You are the Principal Strategy & Digital Architecture Lead. 
+Your signature is "Master Consultant". You synthesize raw data into executive-level clarity.
+Your advice must be structural, actionable, and presented with absolute professional authority.
+Always format your response with clear headings and bullet points for effortless scanning.`;
 
         const findingsSummary = this.summarizeContext(context);
 
-        const prompt = `Review the following findings from our specialized agents and provide a cohesive "Strategic Implementation Roadmap":
+        const prompt = `Review the following multi-agent intelligence and deliver a "Heroic Strategic Roadmap":
 
 ${findingsSummary}
 
-Provide:
-1. **Executive Insight**: One powerful paragraph summarizing the current state.
-2. **Prioritized Action Plan**: A numbered list of top 3 actions across ALL domains (UX, Code, Security).
-3. **Risk/Benefit Analysis**: A brief note on implementation risks vs business rewards.
+Provide your analysis in the following high-fidelity format:
+1. **Executive Strategic Vision**: A 100%+ quality summary of the current engineering and UI/UX posture.
+2. **Prioritized Critical Path**: Exactly 3 high-impact actions ranked by ROI (Return on Investment).
+3. **Architectural Guardrails**: Key risks and technical advice for long-term scalability.
 
-Maintain a professional, authoritative yet helpful tone.`;
+Master Consultant Signature: [Elite Agentic Framework - RepoSense Hub]`;
 
         try {
             const advice = await withRetry(

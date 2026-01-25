@@ -2,6 +2,19 @@ import { OllamaService } from './OllamaService';
 import { GapItem } from '../../models/types';
 import { ArchitectureDiagramGenerator } from './ArchitectureDiagramGenerator';
 import { DiagramLevel } from '../../models/diagram-types';
+import { 
+  Document, 
+  Packer, 
+  Paragraph, 
+  TextRun, 
+  HeadingLevel, 
+  Table, 
+  TableRow, 
+  TableCell, 
+  WidthType, 
+  AlignmentType,
+  ShadingType
+} from 'docx';
 
 export interface ExecutiveReport {
     title: string;
@@ -524,5 +537,128 @@ export class ReportGenerator {
         }
         
         return markdown;
+    }
+
+    /**
+     * Generate Word Document report (DOCX)
+     */
+    public async generateDOCXReport(
+        gaps: GapItem[],
+        summary: AnalysisSummary,
+        strategicRoadmap?: string
+    ): Promise<Buffer> {
+        const report = await this.generateExecutiveReport(gaps, summary);
+        
+        const doc = new Document({
+            sections: [{
+                properties: {},
+                children: [
+                    new Paragraph({
+                        text: report.title,
+                        heading: HeadingLevel.HEADING_1,
+                        alignment: AlignmentType.CENTER,
+                        spacing: { before: 400, after: 200 },
+                    }),
+                    new Paragraph({
+                        children: [
+                            new TextRun({ text: `Generated: ${new Date(report.generatedAt).toLocaleString()}`, color: "888888" }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 400 },
+                    }),
+                    
+                    new Paragraph({
+                        text: "Executive Summary",
+                        heading: HeadingLevel.HEADING_2,
+                        spacing: { before: 400, after: 200 },
+                    }),
+                    new Paragraph({
+                        text: report.summary,
+                        spacing: { after: 200 },
+                    }),
+
+                    new Paragraph({
+                        text: "Key Metrics",
+                        heading: HeadingLevel.HEADING_2,
+                        spacing: { before: 400, after: 200 },
+                    }),
+                    new Table({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        rows: [
+                            new TableRow({
+                                children: [
+                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Metric", bold: true })] })], shading: { fill: "F5F5F5", type: ShadingType.CLEAR } }),
+                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Value", bold: true })] })], shading: { fill: "F5F5F5", type: ShadingType.CLEAR } }),
+                                ],
+                            }),
+                            new TableRow({ children: [new TableCell({ children: [new Paragraph("Total Gaps")] }), new TableCell({ children: [new Paragraph(report.metrics.totalGaps.toString())] })] }),
+                            new TableRow({ children: [new TableCell({ children: [new Paragraph("Critical Issues")] }), new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: report.metrics.criticalIssues.toString(), color: "FF0000", bold: true })] })] })] }),
+                            new TableRow({ children: [new TableCell({ children: [new Paragraph("Orphaned Components")] }), new TableCell({ children: [new Paragraph(report.metrics.orphanedComponents.toString())] })] }),
+                            new TableRow({ children: [new TableCell({ children: [new Paragraph("Unused Endpoints")] }), new TableCell({ children: [new Paragraph(report.metrics.unusedEndpoints.toString())] })] }),
+                            new TableRow({ children: [new TableCell({ children: [new Paragraph("Estimated Fix Time")] }), new TableCell({ children: [new Paragraph(report.metrics.estimatedFixTime)] })] }),
+                        ],
+                    }),
+
+                    new Paragraph({
+                        text: "Detailed Gap Analysis",
+                        heading: HeadingLevel.HEADING_2,
+                        spacing: { before: 400, after: 200 },
+                    }),
+                    new Table({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        rows: [
+                            new TableRow({
+                                children: [
+                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Severity", bold: true })] })], shading: { fill: "F5F5F5", type: ShadingType.CLEAR } }),
+                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Type", bold: true })] })], shading: { fill: "F5F5F5", type: ShadingType.CLEAR } }),
+                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Location", bold: true })] })], shading: { fill: "F5F5F5", type: ShadingType.CLEAR } }),
+                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Message", bold: true })] })], shading: { fill: "F5F5F5", type: ShadingType.CLEAR } }),
+                                ],
+                            }),
+                            ...gaps.sort((a,b) => (a.severity === 'CRITICAL' ? -1 : 1)).map(gap => new TableRow({
+                                children: [
+                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: gap.severity, bold: gap.severity === 'CRITICAL', color: gap.severity === 'CRITICAL' ? "FF0000" : undefined })] })] }),
+                                    new TableCell({ children: [new Paragraph(gap.type.replace('_', ' ').toUpperCase())] }),
+                                    new TableCell({ children: [new Paragraph(`${gap.file}:${gap.line}`)] }),
+                                    new TableCell({ children: [new Paragraph(gap.message)] }),
+                                ],
+                            })),
+                        ],
+                    }),
+
+                    ...(strategicRoadmap ? [
+                        new Paragraph({
+                            text: "Heroic Strategic Roadmap",
+                            heading: HeadingLevel.HEADING_2,
+                            spacing: { before: 600, after: 200 },
+                        }),
+                        ...strategicRoadmap.split('\n').filter(line => line.trim() !== '').map(line => {
+                            if (line.startsWith('###')) {
+                                return new Paragraph({ text: line.replace('###', '').trim(), heading: HeadingLevel.HEADING_3, spacing: { before: 200, after: 100 } });
+                            }
+                            if (line.startsWith('##')) {
+                                return new Paragraph({ text: line.replace('##', '').trim(), heading: HeadingLevel.HEADING_2, spacing: { before: 300, after: 150 } });
+                            }
+                            if (line.startsWith('-')) {
+                                return new Paragraph({ text: line.replace('-', '').trim(), bullet: { level: 0 } });
+                            }
+                            return new Paragraph({ text: line.trim(), spacing: { after: 100 } });
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "Signature: Master Consultant [Elite Agentic Framework - RepoSense Hub]",
+                                    italics: true,
+                                    color: "888888",
+                                })
+                            ],
+                            spacing: { before: 400 },
+                        })
+                    ] : []),
+                ],
+            }],
+        });
+
+        return await Packer.toBuffer(doc);
     }
 }

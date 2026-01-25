@@ -8,12 +8,27 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { promises as fsAsync } from 'fs';
 import { RecommendationPack } from './UIUXAnalyzer';
+import { 
+  Document, 
+  Packer, 
+  Paragraph, 
+  TextRun, 
+  HeadingLevel, 
+  Table, 
+  TableRow, 
+  TableCell, 
+  WidthType, 
+  BorderStyle,
+  AlignmentType,
+  ShadingType
+} from 'docx';
 
 export enum ReportFormat {
   JSON = 'json',
   HTML = 'html',
   MARKDOWN = 'markdown',
   CSV = 'csv',
+  DOCX = 'docx',
 }
 
 export interface ReportConfig {
@@ -201,32 +216,49 @@ export class ReportGenerator {
     }
     
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: ${isDark ? '#1e1e1e' : '#f5f5f5'};
-      color: ${isDark ? '#e0e0e0' : '#333'};
+      font-family: 'Inter', sans-serif;
+      background: #0d1117;
+      color: #c9d1d9;
       line-height: 1.6;
-      padding: 20px;
-    }
-    
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      background: ${isDark ? '#2d2d2d' : 'white'};
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       padding: 40px;
     }
     
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: rgba(22, 27, 34, 0.8);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      padding: 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .glass-glow {
+      position: absolute;
+      top: -100px;
+      right: -100px;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(0,122,255,0.15) 0%, transparent 70%);
+      filter: blur(50px);
+      z-index: -1;
+    }
+    
     h1 {
-      color: #0066cc;
-      margin-bottom: 10px;
-      font-size: 32px;
+      font-family: 'Outfit', sans-serif;
+      color: #58a6ff;
+      margin-bottom: 20px;
+      font-size: 42px;
+      font-weight: 800;
     }
     
     .header {
-      border-bottom: 2px solid #0066cc;
-      padding-bottom: 20px;
-      margin-bottom: 30px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 30px;
+      margin-bottom: 40px;
     }
     
     .timestamp {
@@ -243,25 +275,32 @@ export class ReportGenerator {
     }
     
     .metric-card {
-      background: ${isDark ? '#3a3a3a' : '#f9f9f9'};
-      padding: 20px;
-      border-radius: 6px;
-      border-left: 4px solid #0066cc;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 24px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: transform 0.3s ease;
+    }
+
+    .metric-card:hover {
+      transform: translateY(-5px);
+      border-color: #58a6ff;
     }
     
     .metric-value {
-      font-size: 32px;
-      font-weight: bold;
-      color: #0066cc;
-      margin: 10px 0;
+      font-family: 'Outfit', sans-serif;
+      font-size: 36px;
+      font-weight: 800;
+      color: #58a6ff;
+      margin: 12px 0;
     }
     
     .metric-label {
-      font-size: 14px;
-      color: ${isDark ? '#aaa' : '#666'};
+      font-size: 12px;
+      color: #8b949e;
       text-transform: uppercase;
+      letter-spacing: 1px;
     }
-    
     .risk-score {
       font-size: 48px;
       font-weight: bold;
@@ -352,6 +391,7 @@ export class ReportGenerator {
 </head>
 <body>
   <div class="container">
+    <div class="glass-glow"></div>
     <div class="header">
       <h1>${data.title}</h1>
       <div class="timestamp">Generated: ${new Date(data.generatedAt).toLocaleString()}</div>
@@ -460,18 +500,18 @@ export class ReportGenerator {
 
     ${data.strategicRoadmap ? `
     <div class="section">
-      <h2 style="color: #0d47a1;">🗺️ Agentic Strategic Roadmap</h2>
-      <div class="summary" style="border-left: 4px solid #0d47a1; background: #e3f2fd; padding: 25px; border-radius: 12px;">
+      <h2 style="font-family: 'Outfit', sans-serif; color: #58a6ff;">🗺️ Heroic Strategic Roadmap</h2>
+      <div class="strategy-hub" style="background: rgba(88, 166, 255, 0.05); border: 1px solid rgba(88, 166, 255, 0.2); padding: 40px; border-radius: 16px;">
         ${data.strategicRoadmap.split('\n').map(line => {
-          if (line.startsWith('###')) return `<h3>${line.replace('###', '')}</h3>`;
-          if (line.startsWith('##')) return `<h2>${line.replace('##', '')}</h2>`;
-          if (line.startsWith('#')) return `<h1>${line.replace('#', '')}</h1>`;
-          if (line.startsWith('-')) return `<li>${line.replace('-', '')}</li>`;
-          return `<p>${line}</p>`;
+          if (line.startsWith('###')) return `<h3 style="font-family: 'Outfit', sans-serif; color: #58a6ff; margin: 24px 0 12px 0;">${line.replace('###', '').trim()}</h3>`;
+          if (line.startsWith('##')) return `<h2 style="font-family: 'Outfit', sans-serif; color: #d2a8ff; margin: 32px 0 16px 0; border-bottom: 1px solid rgba(210, 168, 255, 0.2); padding-bottom: 8px;">${line.replace('##', '').trim()}</h2>`;
+          if (line.startsWith('#')) return `<h1 style="font-family: 'Outfit', sans-serif; color: #58a6ff; margin-bottom: 24px;">${line.replace('#', '').trim()}</h1>`;
+          if (line.startsWith('-')) return `<li style="margin-bottom: 8px; color: #c9d1d9;">${line.replace('-', '').trim()}</li>`;
+          return `<p style="margin-bottom: 16px; color: #8b949e; line-height: 1.8;">${line.trim()}</p>`;
         }).join('')}
       </div>
-      <p style="font-size: 11px; color: #999; margin-top: 15px; text-align: right;">
-        Disclaimer: This roadmap is synthesized by a multi-agent consultant and should be used as strategic guidance.
+      <p style="font-size: 11px; color: #484f58; margin-top: 20px; text-align: right; font-style: italic;">
+        Signature: Master Consultant [Elite Agentic Framework - RepoSense Hub]
       </p>
     </div>
     ` : ''}
@@ -561,9 +601,115 @@ export class ReportGenerator {
   }
 
   /**
+   * Generate Word Document report (Sprint 3 Enhancement)
+   */
+  async generateDOCX(): Promise<Buffer> {
+    const data = this.generateReportData();
+    
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: [
+          new Paragraph({
+            text: data.title,
+            heading: HeadingLevel.HEADING_1,
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 400, after: 200 },
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: `Generated: ${new Date(data.generatedAt).toLocaleString()}`, color: "888888" }),
+              new TextRun({ text: `\nRun ID: ${data.runId}`, color: "888888" }),
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 400 },
+          }),
+          
+          new Paragraph({
+            text: "Overall Risk Score",
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 400, after: 200 },
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `${data.summary.overallRiskScore}/100`,
+                bold: true,
+                size: 48,
+                color: this.getRiskColor(data.summary.overallRiskScore).replace('#', ''),
+              }),
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 400 },
+          }),
+
+          new Paragraph({
+            text: "Security Gaps Breakdown",
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 400, after: 200 },
+          }),
+          new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows: [
+              new TableRow({
+                children: [
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Endpoint", bold: true })] })], shading: { fill: "F5F5F5", type: ShadingType.CLEAR } }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Gap Type", bold: true })] })], shading: { fill: "F5F5F5", type: ShadingType.CLEAR } }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Severity", bold: true })] })], shading: { fill: "F5F5F5", type: ShadingType.CLEAR } }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Risk Score", bold: true })] })], shading: { fill: "F5F5F5", type: ShadingType.CLEAR } }),
+                ],
+              }),
+              ...data.topGaps.map(gap => new TableRow({
+                children: [
+                  new TableCell({ children: [new Paragraph(gap.endpoint)] }),
+                  new TableCell({ children: [new Paragraph(gap.type)] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: gap.severity, color: this.getSeverityColor(gap.severity).replace('#', '') })] })] }),
+                  new TableCell({ children: [new Paragraph(gap.riskScore.toString())] }),
+                ],
+              })),
+            ],
+          }),
+
+          ...(data.strategicRoadmap ? [
+            new Paragraph({
+              text: "Heroic Strategic Roadmap",
+              heading: HeadingLevel.HEADING_2,
+              spacing: { before: 600, after: 200 },
+            }),
+            ...data.strategicRoadmap.split('\n').filter(line => line.trim() !== '').map(line => {
+              if (line.startsWith('###')) {
+                return new Paragraph({ text: line.replace('###', '').trim(), heading: HeadingLevel.HEADING_3, spacing: { before: 200, after: 100 } });
+              }
+              if (line.startsWith('##')) {
+                return new Paragraph({ text: line.replace('##', '').trim(), heading: HeadingLevel.HEADING_2, spacing: { before: 300, after: 150 } });
+              }
+              if (line.startsWith('-')) {
+                return new Paragraph({ text: line.replace('-', '').trim(), bullet: { level: 0 } });
+              }
+              return new Paragraph({ text: line.trim(), spacing: { after: 100 } });
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "Signature: Master Consultant [Elite Agentic Framework - RepoSense Hub]",
+                  italics: true,
+                  color: "888888",
+                })
+              ],
+              spacing: { before: 400 },
+            })
+          ] : []),
+        ],
+      }],
+    });
+
+    return await Packer.toBuffer(doc);
+  }
+
+  /**
    * Generate report in specified format
    */
-  generate(format: ReportFormat = ReportFormat.JSON): string {
+  async generate(format: ReportFormat = ReportFormat.JSON): Promise<string | Buffer> {
     switch (format) {
       case ReportFormat.HTML:
         return this.generateHTML();
@@ -573,6 +719,8 @@ export class ReportGenerator {
         return this.generateMarkdown();
       case ReportFormat.CSV:
         return this.generateCSV();
+      case ReportFormat.DOCX:
+        return await this.generateDOCX();
       default:
         return this.generateJSON();
     }

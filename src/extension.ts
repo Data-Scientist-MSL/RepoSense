@@ -42,6 +42,8 @@ import { getCloudStorage } from './services/storage/CloudStorageAdapter';
 import { getWorkerManager } from './services/scaling/DistributedWorker';
 import { registerAgenticTestingCommands } from './services/AgenticBrowserTestingService';
 import { registerEnhancedAgenticCommands } from './services/EnhancedAgenticTestingService';
+import { ConsultantAgent } from './services/agents/ConsultantAgent';
+import { UIUXAnalyzer } from './services/UIUXAnalyzer';
 
 let languageClient: LanguageClient;
 let codeLensProvider: RepoSenseCodeLensProvider;
@@ -74,6 +76,8 @@ let evidenceSigner: EvidenceSigner;
 let agentOrchestrator: AgentOrchestrator;
 let remediationAgent: RemediationAgent;
 let graphEngine: GraphEngine;
+let consultantAgent: ConsultantAgent;
+let uiuxAnalyzer: UIUXAnalyzer;
 
 export function activate(context: vscode.ExtensionContext) {
     const perfTimer = PerformanceMonitor.getInstance().startTimer('extension.activate', {
@@ -115,6 +119,14 @@ export function activate(context: vscode.ExtensionContext) {
     agentOrchestrator = getAgentOrchestrator();
     graphEngine = new GraphEngine();
     remediationAgent = new RemediationAgent(ollamaService, graphEngine);
+    uiuxAnalyzer = new UIUXAnalyzer(reposenseOutputChannel);
+    consultantAgent = new ConsultantAgent(
+        ollamaService, 
+        agentOrchestrator, 
+        uiuxAnalyzer, 
+        remediationAgent, 
+        reposenseOutputChannel
+    );
 
     orchestrator = getOrchestrator(reposenseRoot);
     artifactStore = getArtifactStore(evidenceSigner, reposenseRoot);
@@ -931,6 +943,7 @@ export function activate(context: vscode.ExtensionContext) {
                     'Markdown', 
                     'Markdown with Diagrams',
                     'HTML', 
+                    'Word Document (.docx)',
                     'Executive Summary'
                 ],
                 { placeHolder: 'Select report format' }
@@ -983,7 +996,24 @@ export function activate(context: vscode.ExtensionContext) {
                                 lastAnalysisResult!.summary
                             );
                             extension = 'html';
-                        } else {
+                        } else if (format === 'Word Document (.docx)') {
+                            // Get strategic roadmap first if available
+                            const strategicRoadmap = lastAnalysisResult?.gaps?.length ?
+                                await consultantAgent.consult({
+                                    testResults: lastAnalysisResult,
+                                    uiuxFindings: undefined, // Add if available
+                                    remediationProposals: [],
+                                    codebaseContext: ""
+                                }) : undefined;
+
+                            content = await reportGenerator.generateDOCXReport(
+                                lastAnalysisResult!.gaps,
+                                lastAnalysisResult!.summary as any,
+                                strategicRoadmap
+                            ) as any; // This will be a Buffer
+                            extension = 'docx';
+                        }
+                        else {
                             const execReport = await reportGenerator.generateExecutiveReport(
                                 lastAnalysisResult!.gaps,
                                 lastAnalysisResult!.summary
@@ -1002,9 +1032,10 @@ export function activate(context: vscode.ExtensionContext) {
                                 `reposense-report-${timestamp}.${extension}`
                             );
                             
+                            const reportFileUri = vscode.Uri.file(reportPath);
                             await vscode.workspace.fs.writeFile(
-                                vscode.Uri.file(reportPath),
-                                Buffer.from(content)
+                                reportFileUri,
+                                typeof content === 'string' ? Buffer.from(content) : content as Buffer
                             );
                             
                             const action = await vscode.window.showInformationMessage(

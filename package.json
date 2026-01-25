@@ -383,7 +383,11 @@
         },
         "reposense.browserTesting.llmProvider": {
           "type": "string",
-          "enum": ["ollama", "openai", "browser-use-cloud"],
+          "enum": [
+            "ollama",
+            "openai",
+            "browser-use-cloud"
+          ],
           "default": "ollama",
           "description": "LLM provider for agentic testing"
         },
@@ -434,6 +438,7 @@
   },
   "dependencies": {
     "axios": "^1.6.2",
+    "docx": "^9.5.1",
     "glob": "^10.5.0",
     "uuid": "^13.0.0",
     "vscode-languageclient": "^9.0.1",

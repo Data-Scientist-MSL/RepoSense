@@ -1,0 +1,6 @@
+﻿
+> reposense@1.0.0 compile
+> tsc -p ./
+
+src/services/kiw-integration.ts(9,21): error TS2307: Cannot find module '../types/gap' or its corresponding type declarations.
+src/test/suite/setupTests.ts(55,79): error TS2554: Expected 0 arguments, but got 3.

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RepoSense | GAI-PMWorker Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body class="dark-theme">
+    <div class="glass-bg"></div>
+    
+    <nav class="sidebar">
+        <div class="logo">
+            <span class="logo-icon">R</span>
+            <span class="logo-text">RepoSense</span>
+        </div>
+        <ul class="nav-links">
+            <li class="active"><i class="icon-dashboard"></i> Dashboard</li>
+            <li><i class="icon-analytics"></i> Gap Analysis</li>
+            <li><i class="icon-worker"></i> Worker Status</li>
+            <li><i class="icon-reports"></i> Reports</li>
+        </ul>
+        <div class="user-profile">
+            <div class="avatar">AI</div>
+            <div class="user-info">
+                <span class="user-name">GAI-PMWorker</span>
+                <span class="user-status">Online</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="content">
+        <header class="top-bar">
+            <h1>GAI-PMWorker Intelligence Hub</h1>
+            <div class="status-badge" id="overall-status">
+                <span class="status-dot green"></span>
+                System Healthy
+            </div>
+        </header>
+
+        <section class="hero-stats">
+            <div class="stat-card">
+                <h3>Active Tasks</h3>
+                <div class="value" id="active-tasks">0</div>
+                <div class="growth">+2 this hour</div>
+            </div>
+            <div class="stat-card">
+                <h3>Gaps Resolved</h3>
+                <div class="value" id="gaps-resolved">124</div>
+                <div class="growth">+15% over last run</div>
+            </div>
+            <div class="stat-card">
+                <h3>System Uptime</h3>
+                <div class="value">99.9%</div>
+                <div class="growth">Optimized Efficiency</div>
+            </div>
+        </section>
+
+        <div class="grid-layout">
+            <section class="live-interaction glass-panel">
+                <div class="panel-header">
+                    <h2>Agentic Worker Live</h2>
+                    <span class="badge pulse">LIVE</span>
+                </div>
+                <div class="worker-display">
+                    <div class="worker-avatar">
+                        <div class="brain-glow"></div>
+                        <span class="emoji">🤖</span>
+                    </div>
+                    <div class="worker-info">
+                        <h3 id="current-task">Initializing GAI-PMWorker...</h3>
+                        <p id="agent-thinking">Awaiting task assignment...</p>
+                        <div class="progress-container">
+                            <div class="progress-bar" id="task-progress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="log-stream" id="log-stream">
+                    <div class="log-entry system">Starting GAI-PMWorker Engine...</div>
+                </div>
+            </section>
+
+            <section class="strategic-roadmap glass-panel">
+                <div class="panel-header">
+                    <h2>Strategic Implementation Roadmap</h2>
+                </div>
+                <div class="roadmap-content" id="roadmap-content">
+                    <div class="empty-roadmap">
+                        <p>No active roadmap generated yet.</p>
+                        <button class="btn-primary" id="run-analysis-btn">Launch GAI-PM Analysis</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="worker_sim.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

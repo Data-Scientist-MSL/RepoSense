@@ -2,6 +2,19 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import { spawn, ChildProcess } from 'child_process';
+import { 
+  Document, 
+  Packer, 
+  Paragraph, 
+  TextRun, 
+  HeadingLevel, 
+  Table, 
+  TableRow, 
+  TableCell, 
+  WidthType, 
+  AlignmentType,
+  ShadingType
+} from 'docx';
 
 // ============================================================================
 // INTERFACES
@@ -254,16 +267,113 @@ export class LiveBrowserPreviewPanel {
   }
 
   private async exportReport() {
-    const reportContent = this.generateMarkdownReport();
     const uri = await vscode.window.showSaveDialog({
-      defaultUri: vscode.Uri.file('test-report.md'),
-      filters: { 'Markdown': ['md'], 'HTML': ['html'], 'JSON': ['json'] }
+      defaultUri: vscode.Uri.file('test-report.docx'),
+      filters: { 
+        'Word Document': ['docx'],
+        'Markdown': ['md'], 
+        'HTML': ['html'], 
+        'JSON': ['json'] 
+      }
     });
 
     if (uri) {
-      fs.writeFileSync(uri.fsPath, reportContent);
+      const extension = path.extname(uri.fsPath).toLowerCase();
+      let content: string | Buffer;
+
+      if (extension === '.docx') {
+        content = await this.generateDOCXReport();
+      } else if (extension === '.json') {
+        content = JSON.stringify(this.testState, null, 2);
+      } else if (extension === '.html') {
+        content = this.getWebviewContent(); // Simplified for now
+      } else {
+        content = this.generateMarkdownReport();
+      }
+
+      fs.writeFileSync(uri.fsPath, content);
       vscode.window.showInformationMessage(`Report saved to ${uri.fsPath}`);
     }
+  }
+
+  private async generateDOCXReport(): Promise<Buffer> {
+    const duration = Date.now() - this.testState.startTime;
+    const status = this.testState.status === 'completed' ? 'PASSED' : 'FAILED';
+    const statusColor = status === 'PASSED' ? "007AFF" : "FF0000";
+
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: [
+          new Paragraph({
+            text: "Live Test Session Report",
+            heading: HeadingLevel.HEADING_1,
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 400, after: 200 },
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: `Endpoint: ${this.testState.gap.method} ${this.testState.gap.endpoint}`, bold: true }),
+              new TextRun({ text: `\nStatus: `, color: "888888" }),
+              new TextRun({ text: status, color: statusColor, bold: true }),
+              new TextRun({ text: `\nDuration: ${(duration / 1000).toFixed(2)}s`, color: "888888" }),
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 400 },
+          }),
+
+          new Paragraph({
+            text: "Agent Thinking & Strategy",
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 400, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: this.testState.agentThinking, italics: true })],
+            spacing: { after: 300 },
+          }),
+
+          new Paragraph({
+            text: "Execution Steps",
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 400, after: 200 },
+          }),
+          new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows: [
+              new TableRow({
+                children: [
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "#", bold: true })] })], shading: { fill: "F5F5F5", type: ShadingType.CLEAR } }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Goal", bold: true })] })], shading: { fill: "F5F5F5", type: ShadingType.CLEAR } }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Action", bold: true })] })], shading: { fill: "F5F5F5", type: ShadingType.CLEAR } }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Result", bold: true })] })], shading: { fill: "F5F5F5", type: ShadingType.CLEAR } }),
+                ],
+              }),
+              ...this.testState.steps.map(step => new TableRow({
+                children: [
+                  new TableCell({ children: [new Paragraph(step.stepNumber.toString())] }),
+                  new TableCell({ children: [new Paragraph(step.goal)] }),
+                  new TableCell({ children: [new Paragraph(step.action)] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: step.result.toUpperCase(), color: step.result === 'success' ? "007AFF" : "FF0000" })] })] }),
+                ],
+              })),
+            ],
+          }),
+
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "\nSignature: Master Consultant [Elite Agentic Framework - RepoSense Hub]",
+                italics: true,
+                color: "888888",
+              })
+            ],
+            spacing: { before: 600 },
+          })
+        ],
+      }],
+    });
+
+    return await Packer.toBuffer(doc);
   }
 
   private generateMarkdownReport(): string {
@@ -319,11 +429,23 @@ ${this.testState.error ? `\n## Error\n\n\`\`\`\n${this.testState.error}\n\`\`\``
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--vscode-editor-background);
-            color: var(--vscode-editor-foreground);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
             overflow: hidden;
             height: 100vh;
+        }
+
+        .glass-bg {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(0,122,255,0.15) 0%, transparent 70%);
+            filter: blur(60px);
+            transform: translate(-50%, -50%);
+            z-index: -1;
         }
 
         /* ============ LAYOUT ============ */
@@ -338,9 +460,10 @@ ${this.testState.error ? `\n## Error\n\n\`\`\`\n${this.testState.error}\n\`\`\``
         /* ============ HEADER ============ */
         .header {
             grid-column: 1 / -1;
-            background: var(--vscode-titleBar-activeBackground);
-            border-bottom: 1px solid var(--vscode-panel-border);
-            padding: 12px 20px;
+            background: rgba(13, 17, 23, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 16px 24px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -377,14 +500,16 @@ ${this.testState.error ? `\n## Error\n\n\`\`\`\n${this.testState.error}\n\`\`\``
         }
 
         .header-info h2 {
-            font-size: 14px;
-            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: #f0f6fc;
             margin-bottom: 2px;
         }
 
         .header-info p {
-            font-size: 11px;
-            opacity: 0.7;
+            font-size: 12px;
+            color: #8b949e;
         }
 
         .header-actions {
@@ -393,20 +518,21 @@ ${this.testState.error ? `\n## Error\n\n\`\`\`\n${this.testState.error}\n\`\`\``
         }
 
         .btn {
-            padding: 6px 14px;
-            border: none;
-            border-radius: 4px;
+            padding: 8px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
             font-size: 12px;
             cursor: pointer;
-            font-weight: 500;
-            transition: all 0.2s;
-            background: var(--vscode-button-background);
-            color: var(--vscode-button-foreground);
+            font-weight: 600;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.05);
+            color: #f0f6fc;
         }
 
         .btn:hover {
-            background: var(--vscode-button-hoverBackground);
-            transform: translateY(-1px);
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
 
         .btn-secondary {
@@ -421,10 +547,10 @@ ${this.testState.error ? `\n## Error\n\n\`\`\`\n${this.testState.error}\n\`\`\``
 
         /* ============ SIDEBAR ============ */
         .sidebar {
-            background: var(--vscode-sideBar-background);
-            border-right: 1px solid var(--vscode-panel-border);
+            background: rgba(13, 17, 23, 0.4);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
             overflow-y: auto;
-            padding: 15px;
+            padding: 24px 16px;
         }
 
         .section {
@@ -432,12 +558,13 @@ ${this.testState.error ? `\n## Error\n\n\`\`\`\n${this.testState.error}\n\`\`\``
         }
 
         .section-title {
-            font-size: 11px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 12px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.8px;
-            opacity: 0.6;
-            margin-bottom: 12px;
+            letter-spacing: 1px;
+            color: #8b949e;
+            margin-bottom: 16px;
         }
 
         /* Progress Section */
@@ -474,12 +601,12 @@ ${this.testState.error ? `\n## Error\n\n\`\`\`\n${this.testState.error}\n\`\`\``
 
         /* Steps List */
         .step-item {
-            background: var(--vscode-editor-background);
-            border: 1px solid var(--vscode-panel-border);
-            border-radius: 6px;
-            padding: 10px;
-            margin-bottom: 8px;
-            transition: all 0.2s;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .step-item:hover {
@@ -487,8 +614,9 @@ ${this.testState.error ? `\n## Error\n\n\`\`\`\n${this.testState.error}\n\`\`\``
         }
 
         .step-item.active {
-            border-color: #17a2b8;
-            box-shadow: 0 0 0 2px rgba(23, 162, 184, 0.2);
+            border-color: #007aff;
+            background: rgba(0, 122, 255, 0.05);
+            box-shadow: 0 0 20px rgba(0, 122, 255, 0.1);
         }
 
         .step-header {
@@ -649,18 +777,23 @@ ${this.testState.error ? `\n## Error\n\n\`\`\`\n${this.testState.error}\n\`\`\``
         }
 
         .agent-thinking-box {
-            background: var(--vscode-textCodeBlock-background);
-            border: 1px solid var(--vscode-panel-border);
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
         }
 
         .agent-thinking-box h3 {
-            font-size: 12px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #17a2b8;
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #007aff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .agent-thinking-box p {
@@ -672,16 +805,17 @@ ${this.testState.error ? `\n## Error\n\n\`\`\`\n${this.testState.error}\n\`\`\``
         /* ============ BOTTOM PANEL ============ */
         .bottom-panel {
             grid-column: 1 / -1;
-            background: var(--vscode-panel-background);
-            border-top: 1px solid var(--vscode-panel-border);
+            background: rgba(13, 17, 23, 0.6);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
             overflow-y: auto;
         }
 
         .tabs {
             display: flex;
             gap: 0;
-            border-bottom: 1px solid var(--vscode-panel-border);
-            background: var(--vscode-editorGroupHeader-tabsBackground);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(13, 17, 23, 0.2);
         }
 
         .tab {
@@ -697,8 +831,9 @@ ${this.testState.error ? `\n## Error\n\n\`\`\`\n${this.testState.error}\n\`\`\``
         }
 
         .tab.active {
-            border-bottom-color: #17a2b8;
-            background: var(--vscode-tab-activeBackground);
+            border-bottom-color: #007aff;
+            background: rgba(0, 122, 255, 0.05);
+            color: #f0f6fc;
         }
 
         .tab-content {
@@ -711,12 +846,17 @@ ${this.testState.error ? `\n## Error\n\n\`\`\`\n${this.testState.error}\n\`\`\``
         }
 
         .log-entry {
-            font-family: 'Courier New', monospace;
+            font-family: 'Inter', monospace;
             font-size: 11px;
-            padding: 4px 8px;
-            border-bottom: 1px solid var(--vscode-panel-border);
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
             display: flex;
-            gap: 12px;
+            gap: 16px;
+            transition: background 0.2s;
+        }
+
+        .log-entry:hover {
+            background: rgba(255, 255, 255, 0.02);
         }
 
         .log-time {
@@ -767,9 +907,50 @@ ${this.testState.error ? `\n## Error\n\n\`\`\`\n${this.testState.error}\n\`\`\``
         ::-webkit-scrollbar-thumb:hover {
             background: var(--vscode-scrollbarSlider-hoverBackground);
         }
+
+        /* Error Overlay */
+        .error-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(220, 53, 69, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+            color: white;
+        }
+
+        .error-overlay h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+
+        .error-message {
+            font-family: 'Inter', monospace;
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 800px;
+            word-break: break-all;
+            margin-bottom: 30px;
+        }
     </style>
 </head>
 <body>
+    <div class="error-overlay" id="errorOverlay">
+        <h1>⚠️ Test Execution Failed</h1>
+        <div class="error-message" id="errorMessage"></div>
+        <button class="btn" onclick="retryTest()" style="background: white; color: #dc3545;">Retry Analysis</button>
+    </div>
+    <div class="glass-bg"></div>
     <div class="container">
         <!-- Header -->
         <div class="header">
@@ -934,6 +1115,15 @@ ${this.testState.error ? `\n## Error\n\n\`\`\`\n${this.testState.error}\n\`\`\``
             // Show live indicator when running
             document.getElementById('liveIndicator').style.display = 
                 state.status === 'running' ? 'flex' : 'none';
+
+            // Show error overlay if needed
+            const errorOverlay = document.getElementById('errorOverlay');
+            if (state.status === 'failed' && state.error) {
+                document.getElementById('errorMessage').textContent = state.error;
+                errorOverlay.style.display = 'flex';
+            } else {
+                errorOverlay.style.display = 'none';
+            }
         }
 
         function updateStepsList() {
@@ -1008,6 +1198,13 @@ ${this.testState.error ? `\n## Error\n\n\`\`\`\n${this.testState.error}\n\`\`\``
 
         function stopTest() {
             vscode.postMessage({ command: 'stop' });
+        }
+
+        function retryTest() {
+            // Simply close overlay and let user trigger again
+            document.getElementById('errorOverlay').style.display = 'none';
+            // Optionally tell extension to restart the test
+            vscode.postMessage({ command: 'retry' });
         }
     </script>
 </body>

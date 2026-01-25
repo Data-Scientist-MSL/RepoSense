@@ -113,10 +113,17 @@ export class AgenticBrowserTestingService {
         agentProcess.stderr.on('data', (data) => {
             const errorMsg = data.toString();
             this.outputChannel.append(`[PROCESS ERROR]: ${errorMsg}`);
+            
+            // Log structured error to UI
             panel.setError(errorMsg);
-            // If it's a known error like missing module, give a hint
+
+            // Proactive troubleshooting hints
             if (errorMsg.includes('ModuleNotFoundError')) {
-                this.outputChannel.appendLine('\n[TIP] Make sure you have installed the Python dependencies with "pip install browser-use langchain-openai langchain-ollama"');
+                this.outputChannel.appendLine('\n[TIP] Missing Python dependency. Run: "pip install browser-use langchain-openai langchain-ollama"');
+            } else if (errorMsg.includes('playwright install')) {
+                this.outputChannel.appendLine('\n[TIP] Playwright browsers not found. Run: "playwright install chromium"');
+            } else if (errorMsg.includes('HOME environment variable')) {
+                this.outputChannel.appendLine('\n[TIP] Environment issue: $HOME is not set. Ensure your terminal or VS Code has a valid HOME/USERPROFILE env var.');
             }
         });
 

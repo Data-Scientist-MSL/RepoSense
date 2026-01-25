@@ -2,8 +2,8 @@ import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { RemediationAgent } from '../../../services/agents/RemediationAgent';
 import { OllamaService } from '../../../services/llm/OllamaService';
-import { GraphEngine } from '../../../services/analysis/GraphEngine';
-import { ExecutionResult } from '../../../models/RunOrchestrator';
+import { GraphEngine, NodeType } from '../../../services/analysis/GraphEngine';
+import { ExecutionResult, TestFramework } from '../../../models/RunOrchestrator';
 
 describe('RemediationAgent Unit Tests', () => {
     let agent: RemediationAgent;
@@ -24,20 +24,20 @@ describe('RemediationAgent Unit Tests', () => {
             stderr: 'at main.ts:10',
             status: 'FAILED',
             timestamp: Date.now(),
-            framework: 'playwright',
+            framework: TestFramework.PLAYWRIGHT,
             command: 'npm test',
             workingDirectory: '.',
             env: {},
             startTime: Date.now(),
             endTime: Date.now(),
             durationMs: 100,
-            results: { totalTests: 1, passedTests: 0, failedTests: 1, skippedTests: 0 },
+            results: { totalTests: 1, passed: 0, failed: 1, skipped: 0 },
             testRuns: [],
             artifacts: []
         };
 
         mockGraph.getCriticalNodes.returns([
-            { id: '1', name: 'ServiceA', filePath: 'src/serviceA.ts', type: 'service', criticality: 0.9, depth: 0, dependencies: [] }
+            { id: '1', name: 'ServiceA', filePath: 'src/serviceA.ts', type: NodeType.COMPONENT, criticalityScore: 90, metadata: {} }
         ]);
         mockOllama.generate.resolves('Fix it by adding a null check');
 

@@ -1,0 +1,17 @@
+﻿
+> reposense@1.0.0 test
+> node ./out/test/runTest.js
+
+
+[main 2026-01-25T23:21:30.915Z] update#setState disabled
+[main 2026-01-25T23:21:30.917Z] update#ctor - updates are disabled by the environment
+Loading development extension at c:\Corporate\ReproSense
+MCP Registry configured: https://api.mcp.github.com
+Settings Sync: Account status changed from uninitialized to unavailable
+Started local extension host with pid 31140.
+RepoSense extension is now active!
+Extension activated in 234ms
+Extension host (LocalProcess pid: 31140) is unresponsive.
+Extension host (LocalProcess pid: 31140) is responsive.
+[main 2026-01-25T23:21:55.743Z] Extension host with pid 31140 exited with code: 0, signal: unknown.
+Exit code:   1
