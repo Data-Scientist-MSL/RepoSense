@@ -7,6 +7,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { promises as fsAsync } from 'fs';
+import { RecommendationPack } from './UIUXAnalyzer';
 
 export enum ReportFormat {
   JSON = 'json',
@@ -58,6 +59,8 @@ export interface ReportData {
   topGaps: GapSummary[];
   moduleBreakdown: ModuleSummary[];
   recommendations: string[];
+  uiuxRecommendations?: RecommendationPack;
+  strategicRoadmap?: string;
 }
 
 export class ReportGenerator {
@@ -406,10 +409,72 @@ export class ReportGenerator {
       </table>
     </div>
     
-    <div class="section">
-      <h2>Recommendations</h2>
       ${data.recommendations.map((rec) => `<div class="recommendation">${rec}</div>`).join('')}
     </div>
+
+    ${data.uiuxRecommendations ? `
+    <div class="section">
+      <h2 style="color: #6a1b9a;">🎨 Agentic UI/UX Expert Consultation</h2>
+      <div class="recommendation" style="border-left-color: #6a1b9a; background: #f3e5f5;">
+        ${data.uiuxRecommendations.description.split('\n\n').join('<br><br>')}
+      </div>
+      
+      <div class="metrics">
+        <div class="metric-card" style="border-left-color: #4caf50;">
+          <div class="metric-label">Accessibility Score</div>
+          <div class="metric-value" style="color: #4caf50;">${data.uiuxRecommendations.overallScore.accessibility}%</div>
+        </div>
+        <div class="metric-card" style="border-left-color: #2196f3;">
+          <div class="metric-label">Usability Score</div>
+          <div class="metric-value" style="color: #2196f3;">${data.uiuxRecommendations.overallScore.usability}%</div>
+        </div>
+      </div>
+
+      <p style="font-size: 13px; font-style: italic; margin-top: 10px; color: #666;">
+        ${data.uiuxRecommendations.disclaimer}
+      </p>
+
+      <h3>Identified UX Gaps</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Issue</th>
+            <th>Severity</th>
+            <th>Type</th>
+            <th>Impact</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.uiuxRecommendations.issues.map(issue => `
+            <tr>
+              <td><strong>${issue.title}</strong></td>
+              <td><span class="severity-badge severity-${issue.severity}">${issue.severity}</span></td>
+              <td>${issue.type}</td>
+              <td>${issue.impact}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+    ` : ''}
+
+    ${data.strategicRoadmap ? `
+    <div class="section">
+      <h2 style="color: #0d47a1;">🗺️ Agentic Strategic Roadmap</h2>
+      <div class="summary" style="border-left: 4px solid #0d47a1; background: #e3f2fd; padding: 25px; border-radius: 12px;">
+        ${data.strategicRoadmap.split('\n').map(line => {
+          if (line.startsWith('###')) return `<h3>${line.replace('###', '')}</h3>`;
+          if (line.startsWith('##')) return `<h2>${line.replace('##', '')}</h2>`;
+          if (line.startsWith('#')) return `<h1>${line.replace('#', '')}</h1>`;
+          if (line.startsWith('-')) return `<li>${line.replace('-', '')}</li>`;
+          return `<p>${line}</p>`;
+        }).join('')}
+      </div>
+      <p style="font-size: 11px; color: #999; margin-top: 15px; text-align: right;">
+        Disclaimer: This roadmap is synthesized by a multi-agent consultant and should be used as strategic guidance.
+      </p>
+    </div>
+    ` : ''}
     
     <div class="footer">
       <p>RepoSense Security Report • ${new Date().getFullYear()}</p>
@@ -458,6 +523,25 @@ export class ReportGenerator {
     data.recommendations.forEach((rec) => {
       md += `- ${rec}\n`;
     });
+
+    if (data.strategicRoadmap) {
+      md += `\n## 🗺️ Agentic Strategic Roadmap\n\n`;
+      // Convert markdown-like strategic roadmap to markdown
+      data.strategicRoadmap.split('\n').forEach(line => {
+        if (line.startsWith('###')) {
+          md += `### ${line.replace('###', '').trim()}\n`;
+        } else if (line.startsWith('##')) {
+          md += `## ${line.replace('##', '').trim()}\n`;
+        } else if (line.startsWith('#')) {
+          md += `# ${line.replace('#', '').trim()}\n`;
+        } else if (line.startsWith('-')) {
+          md += `- ${line.replace('-', '').trim()}\n`;
+        } else if (line.trim() !== '') {
+          md += `${line.trim()}\n`;
+        }
+      });
+      md += `\n_Disclaimer: This roadmap is synthesized by a multi-agent consultant and should be used as strategic guidance._\n`;
+    }
 
     return md;
   }

@@ -4,7 +4,9 @@ import { RunContext } from '../../models/RunOrchestrator';
 export enum AgentType {
     REMEDIATION = 'remediation',
     TEST_GENERATION = 'test_generation',
-    AUDIT = 'audit'
+    AUDIT = 'audit',
+    UIUX = 'ui_ux',
+    CONSULTANT = 'consultant'
 }
 
 export interface AgentTask {

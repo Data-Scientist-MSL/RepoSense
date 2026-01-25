@@ -61,19 +61,23 @@
       "reposense": [
         {
           "id": "reposense.gapAnalysis",
-          "name": "Gap Analysis"
+          "name": "Gap Analysis",
+          "icon": "media/icon.svg"
         },
         {
           "id": "reposense.testCases",
-          "name": "Generated Tests"
+          "name": "Generated Tests",
+          "icon": "media/icon.svg"
         },
         {
           "id": "reposense.remediation",
-          "name": "Remediation Suggestions"
+          "name": "Remediation Suggestions",
+          "icon": "media/icon.svg"
         },
         {
           "id": "reposense.coverage",
-          "name": "Coverage Report"
+          "name": "Coverage Report",
+          "icon": "media/icon.svg"
         }
       ]
     },
@@ -192,6 +196,24 @@
         "command": "reposense.viewExecutionEvidence",
         "title": "RepoSense: View Execution Evidence",
         "icon": "$(file-text)"
+      },
+      {
+        "command": "reposense.testWithAgent",
+        "title": "RepoSense: Test with AI Agent",
+        "category": "RepoSense",
+        "icon": "$(robot)"
+      },
+      {
+        "command": "reposense.testWithLivePreview",
+        "title": "RepoSense: Test with Live Preview",
+        "category": "RepoSense",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "reposense.openLivePreview",
+        "title": "RepoSense: Open Live Preview Panel",
+        "category": "RepoSense",
+        "icon": "$(browser)"
       }
     ],
     "menus": {
@@ -246,6 +268,16 @@
         },
         {
           "command": "reposense.copyGapDetails",
+          "when": "view == reposense.gapAnalysis && viewItem == gap",
+          "group": "actions@1"
+        },
+        {
+          "command": "reposense.testWithAgent",
+          "when": "view == reposense.gapAnalysis && viewItem == gap",
+          "group": "actions@2"
+        },
+        {
+          "command": "reposense.testWithLivePreview",
           "when": "view == reposense.gapAnalysis && viewItem == gap",
           "group": "actions@1"
         },
@@ -343,6 +375,22 @@
           "type": "number",
           "default": 300000,
           "description": "Cache TTL in milliseconds for analysis results (default: 5 minutes)"
+        },
+        "reposense.browserTesting.baseUrl": {
+          "type": "string",
+          "default": "http://localhost:3000",
+          "description": "Default application URL for browser testing"
+        },
+        "reposense.browserTesting.llmProvider": {
+          "type": "string",
+          "enum": ["ollama", "openai", "browser-use-cloud"],
+          "default": "ollama",
+          "description": "LLM provider for agentic testing"
+        },
+        "reposense.browserTesting.llmModel": {
+          "type": "string",
+          "default": "deepseek-coder:6.7b",
+          "description": "LLM model to use for agentic testing"
         }
       }
     }
@@ -354,13 +402,17 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "test:unit": "mocha --require ts-node/register 'src/test/suite/**/*.test.ts'",
+    "test:unit": "mocha --require ts-node/register --require src/test/suite/setupTests.ts 'src/test/suite/**/*.{test.ts,test.tsx}'",
     "coverage": "c8 npm test",
     "coverage:report": "c8 report --reporter=html --reporter=text"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.2",
     "@types/better-sqlite3": "^7.6.13",
     "@types/chai": "^5.2.3",
+    "@types/jest-axe": "^3.5.9",
+    "@types/jsdom": "^27.0.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "^20.0.0",
     "@types/react": "^19.2.9",
@@ -373,6 +425,8 @@
     "c8": "^10.1.3",
     "chai": "^6.2.2",
     "eslint": "^8.50.0",
+    "jest-axe": "^10.0.0",
+    "jsdom": "^27.4.0",
     "mocha": "^11.7.5",
     "sinon": "^21.0.1",
     "ts-node": "^10.9.2",

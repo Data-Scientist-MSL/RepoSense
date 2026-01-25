@@ -40,6 +40,8 @@ import { Logger } from './utils/Logger';
 import { Telemetry } from './utils/Telemetry';
 import { getCloudStorage } from './services/storage/CloudStorageAdapter';
 import { getWorkerManager } from './services/scaling/DistributedWorker';
+import { registerAgenticTestingCommands } from './services/AgenticBrowserTestingService';
+import { registerEnhancedAgenticCommands } from './services/EnhancedAgenticTestingService';
 
 let languageClient: LanguageClient;
 let codeLensProvider: RepoSenseCodeLensProvider;
@@ -79,6 +81,9 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     console.log('RepoSense extension is now active!');
+
+    const reposenseOutputChannel = vscode.window.createOutputChannel('RepoSense');
+    context.subscriptions.push(reposenseOutputChannel);
 
     // Epic 5: Initialize error handling
     errorHandler = ErrorHandler.getInstance();
@@ -137,6 +142,10 @@ export function activate(context: vscode.ExtensionContext) {
     const workerManager = getWorkerManager(agentOrchestrator);
     const cloudStorage = getCloudStorage();
     logger.info('SYSTEM', 'Infrastructure services initialized');
+
+    // Register agentic testing commands
+    registerAgenticTestingCommands(context, reposenseOutputChannel);
+    registerEnhancedAgenticCommands(context, reposenseOutputChannel, artifactStore, evidenceSigner, agentOrchestrator);
 
     // Check Ollama availability on startup
     ollamaService.checkHealth().then(isHealthy => {
