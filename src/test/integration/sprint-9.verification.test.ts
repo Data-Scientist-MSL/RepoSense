@@ -1,10 +1,10 @@
-/**
+﻿/**
  * Sprint 9: Complete Verification Test Suite
  * Validates all Sprints 1-8 contracts and acceptance criteria
  * Exit criteria: ALL tests must pass
  */
 
-import * as assert from 'assert';
+import assert from 'assert';
 import RunValidator from '../../services/RunValidatorNew';
 import FixtureRunner, { simpleRestFixture, dynamicParamsFixture, mixedPatternsFixture } from '../fixtures/FixtureSuite';
 

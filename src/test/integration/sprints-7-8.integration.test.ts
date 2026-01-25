@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Sprints 7-8 Integration Tests
  * PerformanceOptimizer, ErrorRecoveryService, DeploymentManager
  * Tests for performance, error handling, and production readiness
@@ -405,6 +405,6 @@ suite('End-to-End: Sprints 7-8 Complete Flow', () => {
     const readiness = deploymentMgr.getDeploymentReadiness();
     assert(readiness.score >= 0);
 
-    console.log('✅ E2E Test Complete: Performance → Error Handling → Deployment');
+    console.log('âœ… E2E Test Complete: Performance â†’ Error Handling â†’ Deployment');
   });
 });

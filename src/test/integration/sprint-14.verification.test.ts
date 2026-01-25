@@ -1,4 +1,4 @@
-/**
+﻿/**
  * sprint-14.verification.test.ts
  * 
  * Sprint 14 Test Suite (Safe Apply, Controlled Execution & Reversibility)
@@ -59,7 +59,7 @@ export const testSafeApplyAtomicity = async () => {
     // Verify workspace is clean after interruption
     const workspaceClean = true; // Would be verified via file system checks
     assert(workspaceClean, 'Workspace must be clean after interrupted apply');
-    console.log(`✓ ${testName}: PASSED - Atomicity guaranteed`);
+    console.log(`âœ“ ${testName}: PASSED - Atomicity guaranteed`);
   }
 };
 
@@ -108,9 +108,9 @@ export const testRollbackIntegrity = async () => {
     assert.strictEqual(restoredHash, preApplyHash, 'Restored file hash must match original');
     assert.strictEqual(restoredContent, 'export const test1 = () => {};', 'Content must be exactly restored');
 
-    console.log(`✓ ${testName}: PASSED - Rollback integrity verified`);
+    console.log(`âœ“ ${testName}: PASSED - Rollback integrity verified`);
   } catch (error) {
-    console.error(`✗ ${testName}: FAILED - ${error}`);
+    console.error(`âœ— ${testName}: FAILED - ${error}`);
     throw error;
   }
 };
@@ -139,7 +139,7 @@ export const testConsentEnforcement = async () => {
   } catch (error: any) {
     if (error.message.includes('Apply blocked')) {
       // Expected behavior
-      console.log(`✓ ${testName}: PASSED - Consent enforcement verified`);
+      console.log(`âœ“ ${testName}: PASSED - Consent enforcement verified`);
       return;
     }
     throw error;
@@ -182,9 +182,9 @@ export const testExecutionIsolation = async () => {
     const testDuration = 15000; // 15 seconds (under timeout)
     assert(testDuration < timeout, 'Test should complete within timeout');
 
-    console.log(`✓ ${testName}: PASSED - Execution isolation verified`);
+    console.log(`âœ“ ${testName}: PASSED - Execution isolation verified`);
   } catch (error) {
-    console.error(`✗ ${testName}: FAILED - ${error}`);
+    console.error(`âœ— ${testName}: FAILED - ${error}`);
     throw error;
   }
 };
@@ -215,7 +215,7 @@ export const testEvidenceCompleteness = async () => {
       durationMs: 2341,
       status: 'PASSED' as const,
       logs: {
-        stdout: 'Test suite passed\n✓ 15 tests',
+        stdout: 'Test suite passed\nâœ“ 15 tests',
         stderr: ''
       },
       coverage: {
@@ -256,9 +256,9 @@ export const testEvidenceCompleteness = async () => {
     assert.strictEqual(evidenceIndex.records[0].testId, testId, 'Evidence index must link to test');
     assert.strictEqual(evidenceIndex.records[0].executionId, executionId, 'Evidence index must link to execution');
 
-    console.log(`✓ ${testName}: PASSED - Evidence completeness verified`);
+    console.log(`âœ“ ${testName}: PASSED - Evidence completeness verified`);
   } catch (error) {
-    console.error(`✗ ${testName}: FAILED - ${error}`);
+    console.error(`âœ— ${testName}: FAILED - ${error}`);
     throw error;
   }
 };
@@ -285,7 +285,7 @@ export const runSprintTests = async () => {
       await test.fn();
       passed++;
     } catch (error) {
-      console.error(`✗ ${test.name}: FAILED`);
+      console.error(`âœ— ${test.name}: FAILED`);
       failed++;
     }
   }
