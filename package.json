@@ -408,7 +408,13 @@
     "test": "node ./out/test/runTest.js",
     "test:unit": "mocha --require ts-node/register --require src/test/suite/setupTests.ts 'src/test/suite/**/*.{test.ts,test.tsx}'",
     "coverage": "c8 npm test",
-    "coverage:report": "c8 report --reporter=html --reporter=text"
+    "coverage:report": "c8 report --reporter=html --reporter=text",
+    "check:ports": "node scripts/port-conflict-detector.js",
+    "check:ports:ci": "node scripts/port-conflict-detector.js --ci",
+    "check:ports:dev": "node scripts/port-conflict-detector.js --env dev",
+    "check:ports:staging": "node scripts/port-conflict-detector.js --env staging",
+    "check:ports:prod": "node scripts/port-conflict-detector.js --env production",
+    "show:port-registry": "node scripts/port-conflict-detector.js --show-registry"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",

@@ -38,6 +38,9 @@ jobs:
     - name: Security audit
       run: npm audit --audit-level=critical
     
+    - name: Port conflict detection
+      run: npm run check:ports:ci
+    
     - name: Upload lint results
       if: always()
       uses: actions/upload-artifact@v3
@@ -109,6 +112,11 @@ jobs:
         echo "Running security scan..."
         npm audit --audit-level=critical || echo "No critical vulnerabilities found"
     
+    - name: Port Conflict Detection (Quality Gate)
+      run: |
+        echo "Checking for port conflicts..."
+        npm run check:ports:ci
+    
     - name: Check package.json
       run: |
         echo "Validating package.json..."
@@ -119,6 +127,7 @@ jobs:
         echo "✅ Quality Gate: PASSED"
         echo "- Compilation: SUCCESS"
         echo "- Security: NO CRITICAL ISSUES"
+        echo "- Port Conflicts: NONE"
         echo "- Package: VALID"
 
   package:

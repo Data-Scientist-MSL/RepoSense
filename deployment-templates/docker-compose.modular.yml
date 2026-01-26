@@ -1,0 +1,61 @@
+version: '3.8'
+
+# Modular Deployment Pattern
+# Single service deployment with external dependencies
+# Suitable for microservices architecture and independent scaling
+
+services:
+  # RepoSense API Service (Standalone)
+  reposense:
+    image: reposense:${VERSION:-latest}
+    container_name: reposense-api
+    ports:
+      - "${REPOSENSE_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=3000
+      # External service URLs (configured via environment)
+      - OBSERVE_API_URL=${EXTERNAL_OBSERVE_URL:-https://observe-api.example.com}
+      - MUAMMAR_API_URL=${EXTERNAL_MUAMMAR_URL:-https://muammar-api.example.com}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - LOG_LEVEL=${LOG_LEVEL:-warn}
+      # Security settings
+      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-100}
+      - CORS_ORIGIN=${CORS_ORIGIN:-https://app.example.com}
+    networks:
+      - reposense-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    user: "1000:1000"  # Run as non-root user
+    # Resource limits for production
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    # Read-only root filesystem (mount volumes for writable areas)
+    read_only: true
+    tmpfs:
+      - /tmp
+    volumes:
+      - logs:/app/logs
+
+networks:
+  reposense-network:
+    driver: bridge
+
+volumes:
+  logs:
+    driver: local

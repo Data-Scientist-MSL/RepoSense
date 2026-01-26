@@ -1,0 +1,144 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-01-26",
+  "description": "Cross-org port allocation registry for Data-Scientist-MSL repositories",
+  "portAllocations": {
+    "reposense": {
+      "dev": {
+        "start": 3000,
+        "end": 3099,
+        "description": "RepoSense development environment"
+      },
+      "staging": {
+        "start": 3100,
+        "end": 3199,
+        "description": "RepoSense staging environment"
+      },
+      "production": {
+        "start": 3200,
+        "end": 3299,
+        "description": "RepoSense production environment"
+      }
+    },
+    "gai-observe-online": {
+      "dev": {
+        "start": 4000,
+        "end": 4099,
+        "description": "gaI-observe-online development environment"
+      },
+      "staging": {
+        "start": 4100,
+        "end": 4199,
+        "description": "gaI-observe-online staging environment"
+      },
+      "production": {
+        "start": 4200,
+        "end": 4299,
+        "description": "gaI-observe-online production environment"
+      }
+    },
+    "observe": {
+      "dev": {
+        "start": 4000,
+        "end": 4099,
+        "description": "observe development environment (alias)"
+      },
+      "staging": {
+        "start": 4100,
+        "end": 4199,
+        "description": "observe staging environment (alias)"
+      },
+      "production": {
+        "start": 4200,
+        "end": 4299,
+        "description": "observe production environment (alias)"
+      }
+    },
+    "muammarlone": {
+      "dev": {
+        "start": 5000,
+        "end": 5099,
+        "description": "muammarlone development environment"
+      },
+      "staging": {
+        "start": 5100,
+        "end": 5199,
+        "description": "muammarlone staging environment"
+      },
+      "production": {
+        "start": 5200,
+        "end": 5299,
+        "description": "muammarlone production environment"
+      }
+    },
+    "muammar": {
+      "dev": {
+        "start": 5000,
+        "end": 5099,
+        "description": "muammar development environment (alias)"
+      },
+      "staging": {
+        "start": 5100,
+        "end": 5199,
+        "description": "muammar staging environment (alias)"
+      },
+      "production": {
+        "start": 5200,
+        "end": 5299,
+        "description": "muammar production environment (alias)"
+      }
+    },
+    "cache": {
+      "dev": {
+        "start": 6379,
+        "end": 6379,
+        "description": "Redis cache (standard port)"
+      },
+      "staging": {
+        "start": 6379,
+        "end": 6379,
+        "description": "Redis cache (standard port)"
+      },
+      "production": {
+        "start": 6379,
+        "end": 6379,
+        "description": "Redis cache (standard port)"
+      }
+    },
+    "db": {
+      "dev": {
+        "start": 5432,
+        "end": 5432,
+        "description": "PostgreSQL database (standard port)"
+      },
+      "staging": {
+        "start": 5432,
+        "end": 5432,
+        "description": "PostgreSQL database (standard port)"
+      },
+      "production": {
+        "start": 5432,
+        "end": 5432,
+        "description": "PostgreSQL database (standard port)"
+      }
+    }
+  },
+  "reservedPorts": [
+    { "port": 22, "service": "SSH" },
+    { "port": 25, "service": "SMTP" },
+    { "port": 80, "service": "HTTP" },
+    { "port": 443, "service": "HTTPS" },
+    { "port": 3306, "service": "MySQL" },
+    { "port": 5432, "service": "PostgreSQL" },
+    { "port": 27017, "service": "MongoDB" },
+    { "port": 11434, "service": "Ollama" }
+  ],
+  "changeLog": [
+    {
+      "date": "2026-01-26",
+      "version": "1.0.0",
+      "changes": "Initial port allocation registry created with service aliases",
+      "author": "copilot"
+    }
+  ]
+}
