@@ -228,6 +228,13 @@ Open Settings (`Ctrl+,` / `Cmd+,`) and search for "RepoSense":
 - [Settings Reference](docs/settings.md)
 - [Troubleshooting](docs/troubleshooting.md)
 
+### Security & Governance
+
+- [Security & Governance Initiative](docs/SECURITY_GOVERNANCE_INITIATIVE.md)
+- [Deployment Governance](docs/DEPLOYMENT_GOVERNANCE.md)
+- [Monitoring & Conflict Resolution](docs/MONITORING_CONFLICT_RESOLUTION.md)
+- [Quick Reference Guide](docs/QUICK_REFERENCE.md)
+
 ---
 
 ## ðŸ—ï¸ Architecture
